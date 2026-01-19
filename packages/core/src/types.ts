@@ -24,21 +24,57 @@ export interface LioClient {
   schema: SchemaPlugin;
 }
 
-// Plugin interfaces (to be implemented)
+// Plugin interfaces
 export interface Plugin {
   name: string;
   // SDK Kit plugin interface TBD
 }
 
+export interface WorkflowJob {
+  id: string;
+  name: string;
+  workflow: string;
+  status: 'sleeping' | 'running' | 'completed' | 'failed';
+  updated: string;
+  config: Record<string, unknown>;
+}
+
 export interface WorkflowsPlugin {
-  list(options?: { workflow?: string }): Promise<any>;
+  list(options?: { workflow?: string }): Promise<WorkflowJob[]>;
+}
+
+export interface ContentEntity {
+  url: string;
+  hashedurl?: string[];
+  lytics?: Record<string, number>;
+  title?: string | null;
+  author?: string | null;
+  description?: string | null;
+  body?: string | null;
+  created?: string | null;
+  _created?: string;
+  _modified?: string;
+  _segments?: string[];
+  contentstack_uid?: string | null;
+  [key: string]: unknown;
 }
 
 export interface ContentPlugin {
-  getByUrl(url: string): Promise<any>;
-  scan(options?: { filter?: string; limit?: number }): AsyncGenerator<any[]>;
+  getByUrl(url: string): Promise<ContentEntity>;
+  scan(options?: { filter?: string; limit?: number }): AsyncGenerator<ContentEntity[]>;
+}
+
+export interface SchemaField {
+  id: string;
+  type: string;
+  description?: string;
+}
+
+export interface Schema {
+  name: string;
+  fields: SchemaField[];
 }
 
 export interface SchemaPlugin {
-  get(table: string): Promise<any>;
+  get(table: string): Promise<Schema>;
 }

@@ -13,7 +13,7 @@ import type { LioClient, LioClientConfig } from './types';
  * const content = await lio.content.getByUrl('example.com/blog');
  * ```
  */
-export function createLioClient(config: LioClientConfig): LioClient {
+export function createLioClient(_config: LioClientConfig): LioClient {
   // TODO: Implement SDK Kit integration
   // This will use the plugin architecture from SDK Kit
   
