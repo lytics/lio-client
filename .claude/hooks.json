@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "command": "git diff --name-only --diff-filter=ACMR | grep -E '\\.(ts|tsx|json|md)$' | xargs -r pnpm biome format --write",
+        "description": "Auto-format changed files with Biome",
+        "continueOnError": true
+      },
+      {
+        "command": "git diff --name-only --diff-filter=ACMR | grep -E '\\.(ts|tsx)$' | xargs -r pnpm biome lint --write",
+        "description": "Auto-fix linting issues with Biome",
+        "continueOnError": true
+      },
+      {
+        "command": "git diff --name-only --diff-filter=ACMR | grep -E '\\.(test|spec)\\.(ts|tsx)$' | head -5 | while read file; do pnpm vitest run \"$file\" 2>&1 | grep -E '(PASS|FAIL|✓|✗|Error)' | head -20; done",
+        "description": "Run tests for changed test files (max 5 files, 20 lines output)",
+        "continueOnError": true
+      }
+    ]
+  }
+}

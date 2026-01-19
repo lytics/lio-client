@@ -1,0 +1,42 @@
+{
+  "name": "@lytics/lio-client-contentstack",
+  "version": "0.1.0",
+  "description": "Contentstack integration for Lytics lio-client - enrich CMS content with Lytics analytics",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": ["lytics", "contentstack", "cms", "content-enrichment"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lytics/lio-client.git",
+    "directory": "packages/contentstack"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint ./src",
+    "format": "biome format --write ./src",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@lytics/lio-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@lytics/lio-client": "workspace:*",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "defaultMode": "plan",
+    "ask": [
+      "Bash(rm -rf:*)",
+      "Bash(git push:*)",
+      "Bash(npm publish:*)",
+      "Bash(pnpm publish:*)"
+    ],
+    "deny": [
+      "Bash(:*sudo*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout --:*)",
+      "Bash(git reset --hard:*)"
+    ]
+  }
+}

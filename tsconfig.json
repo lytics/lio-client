@@ -1,0 +1,22 @@
+{
+  "extends": "@tsconfig/node-lts/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "lib": ["ES2022", "DOM"],
+    "baseUrl": ".",
+    "paths": {
+      "@lytics/lio-client": ["packages/core/src"],
+      "@lytics/lio-client/*": ["packages/core/src/*"],
+      "@lytics/lio-client-contentstack": ["packages/contentstack/src"],
+      "@lytics/lio-client-contentstack/*": ["packages/contentstack/src/*"]
+    }
+  },
+  "exclude": ["node_modules"]
+}
