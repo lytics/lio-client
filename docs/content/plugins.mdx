@@ -1,0 +1,232 @@
+---
+title: Plugins
+description: Extend lio-client with CMS integrations
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Plugins
+
+Extend lio-client with CMS-specific functionality through plugins.
+
+## Contentstack Plugin
+
+The `@lytics/lio-client-contentstack` plugin provides Contentstack-specific enrichment methods.
+
+### Installation
+
+```bash
+npm install @lytics/lio-client @lytics/lio-client-contentstack
+```
+
+### Usage
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+import { contentstackPlugin } from '@lytics/lio-client-contentstack';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY,
+  plugins: [contentstackPlugin()]
+});
+
+await lio.init();
+```
+
+### API Methods
+
+#### `contentstack.getSyncStatus()`
+
+Monitor the Contentstack import workflow:
+
+```typescript
+const status = await lio.contentstack.getSyncStatus();
+
+console.log('Status:', status.status);
+console.log('Last sync:', status.lastSync);
+console.log('Entries synced:', status.entriesSynced);
+```
+
+**Response:**
+```typescript
+{
+  status: 'sleeping' | 'running' | 'completed' | 'failed' | 'not_configured';
+  lastSync: string | null;
+  entriesSynced: number;
+  contentTypes: string[];
+  workflowId?: string;
+}
+```
+
+#### `contentstack.getEnrichmentData(entryOrUrl)`
+
+Fetch Lytics enrichment data for a Contentstack entry:
+
+```typescript
+// By entry object (uses entry.url or entry.uid)
+const data = await lio.contentstack.getEnrichmentData(entry);
+
+// By URL string
+const data = await lio.contentstack.getEnrichmentData('example.com/blog/post');
+```
+
+**Hybrid Matching:**
+1. **URL lookup first** (fast)
+2. **UID fallback** (robust against URL changes)
+
+**Response:**
+```typescript
+{
+  url: string;
+  uid: string;
+  lytics: {
+    [topic: string]: number;
+  };
+  _segments: string[];
+  // ... other content fields
+} | null
+```
+
+#### `contentstack.scanContent(options?)`
+
+Scan all Lytics content (async generator):
+
+```typescript
+for await (const batch of lio.contentstack.scanContent()) {
+  for (const content of batch) {
+    console.log(content.url, content.lytics);
+  }
+}
+```
+
+#### `contentstack.enrich(entry)`
+
+Enrich a single Contentstack entry:
+
+```typescript
+const enriched = await lio.contentstack.enrich(blogPost);
+
+// Original entry + _lytics field
+console.log(enriched.title);          // Original field
+console.log(enriched._lytics.topics); // Lytics enrichment
+console.log(enriched._lytics.segments);
+```
+
+**Response:**
+```typescript
+{
+  ...originalEntry,
+  _lytics?: {
+    topics: { [topic: string]: number };
+    hashedurl: string;
+    segments: string[];
+  }
+}
+```
+
+#### `contentstack.enrichMany(entries)`
+
+Enrich multiple entries efficiently:
+
+```typescript
+const entries = await contentstackSDK.getEntries();
+const enriched = await lio.contentstack.enrichMany(entries);
+
+// All entries enriched with _lytics field
+for (const entry of enriched) {
+  if (entry._lytics) {
+    console.log('Topics:', entry._lytics.topics);
+  }
+}
+```
+
+<Callout type="info">
+  **Performance:** `enrichMany()` uses parallel requests for better performance than calling `enrich()` in a loop.
+</Callout>
+
+### Configuration
+
+Customize the plugin behavior:
+
+```typescript
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY,
+  plugins: [contentstackPlugin()],
+  contentstack: {
+    workflowName: 'my-custom-import-workflow', // Default: 'contentstack-import'
+    streamName: 'my-stream'                     // Default: 'contentstack'
+  }
+});
+```
+
+### Error Handling
+
+Enrichment methods return original data if Lytics data is unavailable:
+
+```typescript
+const enriched = await lio.contentstack.enrich(entry);
+
+if (enriched._lytics) {
+  // Lytics data available
+  console.log('Topics:', enriched._lytics.topics);
+} else {
+  // Lytics data not found, but entry is still usable
+  console.log('No enrichment data');
+}
+```
+
+## Building Custom Plugins
+
+Create your own CMS-specific plugins using SDK Kit patterns:
+
+<Steps>
+### Create Plugin Function
+
+```typescript
+import type { PluginFunction } from '@lytics/sdk-kit';
+import type { LioClient } from '@lytics/lio-client';
+
+export const myCmsPlugin: PluginFunction = (plugin, instance, config) => {
+  const lio = instance as LioClient;
+
+  plugin.ns('mycms');
+
+  plugin.expose({
+    mycms: {
+      async enrichEntry(entry) {
+        // Use lio.content.getByUrl() or lio.content.scan()
+        const data = await lio.content.getByUrl(entry.url);
+        return { ...entry, _lytics: data };
+      }
+    }
+  });
+};
+```
+
+### Register Plugin
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+import { myCmsPlugin } from './my-cms-plugin';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY,
+  plugins: [myCmsPlugin]
+});
+```
+
+### Use Plugin
+
+```typescript
+const enriched = await lio.mycms.enrichEntry(cmsEntry);
+```
+</Steps>
+
+<Callout type="default">
+  **Plugin Guide:** See [SDK Kit plugin documentation](https://lytics.github.io/sdk-kit/plugin-guide) for advanced patterns.
+</Callout>
+
+## Next Steps
+
+- [Examples](/examples) - Real-world integration patterns
+- [SDK Kit Plugins](https://lytics.github.io/sdk-kit/plugin-guide) - Advanced plugin development

@@ -1,0 +1,110 @@
+---
+title: lio-client
+description: TypeScript SDK for the Lytics API
+---
+
+import { Callout, Steps, Cards } from 'nextra/components'
+
+# lio-client
+
+**TypeScript SDK for the Lytics API**
+
+Modern JavaScript/TypeScript SDK for programmatic access to Lytics workflows, content enrichment, and schema introspection. Built with SDK Kit's proven plugin architecture for extensibility and type safety.
+
+<Callout type="info">
+  **Latest Release:** v0.1.0 — Core SDK and Contentstack plugin ready for production use
+</Callout>
+
+## Why lio-client?
+
+Fill the gap between Lytics' mature Go SDK and the JavaScript/TypeScript ecosystem. Whether you're building a CMS integration, querying analytics from Node.js, or creating a marketplace app—lio-client provides the foundation:
+
+- **Universal Runtime** - Works in browser, Node.js, edge functions, and serverless
+- **Type-Safe** - Full TypeScript support with strict mode
+- **Plugin Architecture** - Extend with CMS-specific integrations
+- **Production-Ready** - Robust error handling, retries, and caching built-in
+- **Lytics-Specific** - Handles API authentication, envelope unwrapping, and URL normalization
+
+## Quick Start
+
+Build Lytics integrations in minutes:
+
+<Steps>
+### Install
+
+```bash
+npm install @lytics/lio-client
+```
+
+### Initialize
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+
+const lio = createLioClient({ 
+  apiKey: 'YOUR_LYTICS_API_KEY'
+});
+
+await lio.init();
+```
+
+### Query the API
+
+```typescript
+// Monitor workflows
+const jobs = await lio.workflows.list();
+const job = await lio.workflows.get('job-id');
+const logs = await lio.workflows.getLogs('job-id');
+
+// Enrich content
+const content = await lio.content.getByUrl('example.com/blog/post');
+
+// Introspect schema
+const schema = await lio.schema.get('content');
+```
+</Steps>
+
+## What Can You Build?
+
+<Callout type="default">
+  **CMS Integrations** — Enrich Contentstack, WordPress, or Sanity content with Lytics analytics
+</Callout>
+
+<Callout type="default">
+  **Automation Scripts** — Monitor sync workflows, detect issues, and alert teams
+</Callout>
+
+<Callout type="default">
+  **Marketplace Apps** — Build dashboard widgets that display Lytics data inline
+</Callout>
+
+<Callout type="default">
+  **Analytics Dashboards** — Query content performance and audience insights
+</Callout>
+
+## What lio-client Does NOT Do
+
+<Callout type="warning">
+  **Not for User Tracking** — Use [jstag](https://learn.lytics.com/documentation/product/features/guides/jstag-readme) for browser analytics and personalization
+</Callout>
+
+lio-client is for **server-side and integration use cases**, not user tracking or real-time personalization.
+
+## Available Packages
+
+**Core SDK:**
+- `@lytics/lio-client` - Universal Lytics API client
+
+**Integration Plugins:**
+- `@lytics/lio-client-contentstack` - Contentstack CMS enrichment
+
+## Learn More
+
+- [Getting Started](/getting-started) - Install and configure
+- [Core API](/core-api) - Workflows, Content, and Schema
+- [Plugins](/plugins) - Contentstack and building your own
+- [Examples](/examples) - Real-world use cases
+
+<Callout type="success">
+  **Open Source & MIT Licensed** — Ship production integrations, prototype ideas, or extend with custom plugins. Built by Lytics, shared with the community.
+</Callout>

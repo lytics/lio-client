@@ -1,0 +1,378 @@
+---
+title: Examples
+description: Integration patterns and use cases
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# Examples
+
+<Callout type="warning">
+  **Coming Soon** — Tested examples are being added as we validate real-world integration patterns. The patterns below are conceptual and may require adjustments for your specific use case.
+</Callout>
+
+Common patterns for integrating lio-client into your applications.
+
+## Monitor Workflow Status
+
+Check if your content sync is healthy:
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+import { contentstackPlugin } from '@lytics/lio-client-contentstack';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY,
+  plugins: [contentstackPlugin()]
+});
+
+await lio.init();
+
+// Get sync status
+const status = await lio.contentstack.getSyncStatus();
+
+if (status.status === 'failed') {
+  console.error('❌ Sync failed!');
+  // Send alert to Slack/PagerDuty
+} else if (status.status === 'running') {
+  console.log('🔄 Sync in progress...');
+} else {
+  console.log(`✅ Sync healthy. Last sync: ${status.lastSync}`);
+}
+```
+
+## Enrich CMS Content in Real-Time
+
+Add Lytics data to content as users fetch it:
+
+```typescript
+import contentstack from '@contentstack/delivery-sdk';
+import { createLioClient } from '@lytics/lio-client';
+import { contentstackPlugin } from '@lytics/lio-client-contentstack';
+
+const cms = contentstack.Stack({
+  api_key: process.env.CONTENTSTACK_API_KEY,
+  delivery_token: process.env.CONTENTSTACK_DELIVERY_TOKEN,
+  environment: 'production'
+});
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY,
+  plugins: [contentstackPlugin()]
+});
+
+await lio.init();
+
+// Fetch and enrich
+const entries = await cms.ContentType('blog_post').Entry.Query().find();
+const enriched = await lio.contentstack.enrichMany(entries[0]);
+
+// Now entries have _lytics field
+for (const entry of enriched) {
+  console.log(`${entry.title}:`);
+  if (entry._lytics) {
+    console.log('  Topics:', Object.keys(entry._lytics.topics).slice(0, 5).join(', '));
+    console.log('  Segments:', entry._lytics.segments.length);
+  }
+}
+```
+
+## Build a Content Performance Dashboard
+
+Query all content and generate analytics:
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+
+await lio.init();
+
+const analytics = {
+  totalContent: 0,
+  topTopics: new Map(),
+  segmentCoverage: new Set()
+};
+
+// Scan all content
+for await (const batch of lio.content.scan()) {
+  for (const content of batch) {
+    analytics.totalContent++;
+
+    // Aggregate topics
+    for (const [topic, score] of Object.entries(content.lytics || {})) {
+      analytics.topTopics.set(
+        topic,
+        (analytics.topTopics.get(topic) || 0) + score
+      );
+    }
+
+    // Track segment coverage
+    for (const segment of content._segments || []) {
+      analytics.segmentCoverage.add(segment);
+    }
+  }
+}
+
+console.log('📊 Content Analytics:');
+console.log(`  Total pieces: ${analytics.totalContent}`);
+console.log(`  Unique segments: ${analytics.segmentCoverage.size}`);
+
+const topTopics = [...analytics.topTopics.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 10);
+
+console.log('  Top topics:', topTopics.map(([t]) => t).join(', '));
+```
+
+## Scheduled Content Audit
+
+Run daily to detect content without enrichment:
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+import contentstack from '@contentstack/delivery-sdk';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+
+const cms = contentstack.Stack({
+  api_key: process.env.CONTENTSTACK_API_KEY,
+  delivery_token: process.env.CONTENTSTACK_DELIVERY_TOKEN,
+  environment: 'production'
+});
+
+await lio.init();
+
+// Get all CMS entries
+const cmsEntries = await cms.ContentType('blog_post').Entry.Query().find();
+
+// Build Lytics content map
+const lyticsContent = new Map();
+for await (const batch of lio.content.scan()) {
+  for (const item of batch) {
+    lyticsContent.set(item.url, item);
+  }
+}
+
+// Find missing enrichment
+const missing = [];
+for (const entry of cmsEntries[0]) {
+  if (!lyticsContent.has(entry.url)) {
+    missing.push(entry);
+  }
+}
+
+if (missing.length > 0) {
+  console.log(`⚠️  ${missing.length} entries missing Lytics enrichment:`);
+  for (const entry of missing.slice(0, 10)) {
+    console.log(`  - ${entry.title} (${entry.url})`);
+  }
+  // Send report to team
+}
+```
+
+## Serverless Function Integration
+
+Use in AWS Lambda, Cloudflare Workers, or Vercel Functions:
+
+<Tabs items={['Vercel', 'AWS Lambda', 'Cloudflare Workers']}>
+  <Tabs.Tab>
+```typescript
+// api/enrich.ts
+import { createLioClient } from '@lytics/lio-client';
+import { contentstackPlugin } from '@lytics/lio-client-contentstack';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY,
+  plugins: [contentstackPlugin()]
+});
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  await lio.init();
+
+  const { url } = req.query;
+  const content = await lio.content.getByUrl(url as string);
+
+  res.status(200).json(content);
+}
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```typescript
+// handler.ts
+import { createLioClient } from '@lytics/lio-client';
+import type { APIGatewayProxyHandler } from 'aws-lambda';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+
+export const handler: APIGatewayProxyHandler = async (event) => {
+  await lio.init();
+
+  const url = event.queryStringParameters?.url;
+  const content = await lio.content.getByUrl(url);
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify(content)
+  };
+};
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```typescript
+// worker.ts
+import { createLioClient } from '@lytics/lio-client';
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const lio = createLioClient({
+      apiKey: env.LYTICS_API_KEY
+    });
+
+    await lio.init();
+
+    const url = new URL(request.url);
+    const contentUrl = url.searchParams.get('url');
+
+    const content = await lio.content.getByUrl(contentUrl);
+
+    return new Response(JSON.stringify(content), {
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+};
+```
+  </Tabs.Tab>
+</Tabs>
+
+<Callout type="warning">
+  **Cold Starts:** Consider caching the lio client instance across invocations in long-running serverless environments.
+</Callout>
+
+## Next.js Server Actions
+
+Use in Next.js App Router:
+
+```typescript
+// app/actions.ts
+'use server';
+
+import { createLioClient } from '@lytics/lio-client';
+import { contentstackPlugin } from '@lytics/lio-client-contentstack';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY,
+  plugins: [contentstackPlugin()]
+});
+
+export async function getEnrichedContent(url: string) {
+  await lio.init();
+  return await lio.content.getByUrl(url);
+}
+
+export async function getSyncStatus() {
+  await lio.init();
+  return await lio.contentstack.getSyncStatus();
+}
+```
+
+```typescript
+// app/dashboard/page.tsx
+import { getEnrichedContent, getSyncStatus } from '../actions';
+
+export default async function Dashboard() {
+  const status = await getSyncStatus();
+  const content = await getEnrichedContent('example.com/blog/post');
+
+  return (
+    <div>
+      <h1>Sync Status: {status.status}</h1>
+      <h2>Content Topics:</h2>
+      <ul>
+        {Object.keys(content.lytics || {}).map(topic => (
+          <li key={topic}>{topic}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+## Error Handling Best Practices
+
+Robust error handling for production:
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+
+await lio.init();
+
+async function safeEnrich(url: string) {
+  try {
+    const content = await lio.content.getByUrl(url);
+    return { success: true, data: content };
+  } catch (error) {
+    if (error.status === 404) {
+      console.log(`Content not found: ${url}`);
+      return { success: false, error: 'not_found' };
+    } else if (error.status === 429) {
+      console.error('Rate limited, retry later');
+      return { success: false, error: 'rate_limited' };
+    } else {
+      console.error('API error:', error.message, error.request_id);
+      return { success: false, error: 'api_error' };
+    }
+  }
+}
+
+const result = await safeEnrich('example.com/page');
+if (result.success) {
+  console.log('Enrichment:', result.data);
+}
+```
+
+## TypeScript Integration
+
+Full type safety in your applications:
+
+```typescript
+import {
+  createLioClient,
+  type LioClient,
+  type ContentEntity,
+  type WorkflowListResponse
+} from '@lytics/lio-client';
+
+const lio: LioClient = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+
+await lio.init();
+
+// Types inferred automatically
+const workflows: WorkflowListResponse = await lio.workflows.list();
+const content: ContentEntity = await lio.content.getByUrl('example.com');
+
+// Type-safe plugin usage
+import { contentstackPlugin, type EnrichedContentstackEntry } from '@lytics/lio-client-contentstack';
+
+const enriched: EnrichedContentstackEntry<MyEntry> = 
+  await lio.contentstack.enrich(myEntry);
+```
+
+## Next Steps
+
+- [GitHub Repository](https://github.com/lytics/lio-client) - View source, report issues
+- [npm Package](https://www.npmjs.com/package/@lytics/lio-client) - Latest releases
+- [Lytics API Docs](https://learn.lytics.com/api-docs) - Full API reference

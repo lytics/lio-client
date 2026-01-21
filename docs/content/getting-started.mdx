@@ -1,0 +1,173 @@
+---
+title: Getting Started
+description: Install and configure lio-client
+---
+
+import { Callout, Steps, Tabs } from 'nextra/components'
+
+# Getting Started
+
+Get up and running with lio-client in minutes.
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+  <Tabs.Tab>
+    ```bash
+    npm install @lytics/lio-client
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    pnpm add @lytics/lio-client
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    yarn add @lytics/lio-client
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+<Callout type="info">
+  **Requirements:** Node.js ≥ 18 or modern browser with ES2020 support
+</Callout>
+
+## Basic Setup
+
+Create and initialize your Lytics client:
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+
+const lio = createLioClient({
+  apiKey: 'YOUR_LYTICS_API_KEY',
+  baseUrl: 'https://api.lytics.io' // Optional, defaults to api.lytics.io
+});
+
+await lio.init();
+```
+
+<Callout type="warning">
+  **Never expose API keys in client-side code.** Use environment variables and server-side execution.
+</Callout>
+
+## Environment Variables
+
+Store your API key securely:
+
+```bash filename=".env.local"
+LYTICS_API_KEY=your_api_key_here
+```
+
+Then use it in your code:
+
+```typescript
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+```
+
+## First API Call
+
+Test your setup by listing workflows:
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+
+await lio.init();
+
+// List all workflows
+const workflows = await lio.workflows.list();
+console.log('Workflows:', workflows);
+
+// Get content by URL
+const content = await lio.content.getByUrl('example.com/blog/post');
+console.log('Content:', content);
+
+// Get schema
+const schema = await lio.schema.get('content');
+console.log('Schema:', schema);
+```
+
+## With Contentstack Plugin
+
+Add Contentstack-specific features:
+
+```bash
+npm install @lytics/lio-client @lytics/lio-client-contentstack
+```
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+import { contentstackPlugin } from '@lytics/lio-client-contentstack';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY,
+  plugins: [contentstackPlugin()]
+});
+
+await lio.init();
+
+// Contentstack-specific methods
+const status = await lio.contentstack.getSyncStatus();
+const enriched = await lio.contentstack.enrich(cmsEntry);
+```
+
+## TypeScript
+
+lio-client is TypeScript-first. Types are included automatically:
+
+```typescript
+import { createLioClient, type LioClient, type WorkflowListResponse } from '@lytics/lio-client';
+
+const lio: LioClient = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+
+const workflows: WorkflowListResponse = await lio.workflows.list();
+```
+
+## Error Handling
+
+All API calls may throw errors. Use try/catch:
+
+```typescript
+try {
+  const content = await lio.content.getByUrl('example.com/page');
+  console.log('Content found:', content);
+} catch (error) {
+  if (error.status === 404) {
+    console.log('Content not found');
+  } else {
+    console.error('API error:', error.message);
+  }
+}
+```
+
+## Lifecycle
+
+The client supports proper initialization and cleanup:
+
+```typescript
+// Initialize (required)
+await lio.init();
+
+// Check if ready
+if (lio.isReady()) {
+  // Make API calls
+}
+
+// Cleanup when done
+await lio.destroy();
+```
+
+## Next Steps
+
+- [Core API](/core-api) - Learn about Workflows, Content, and Schema APIs
+- [Plugins](/plugins) - Extend with Contentstack or build your own
+- [Examples](/examples) - Real-world integration patterns

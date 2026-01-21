@@ -1,0 +1,191 @@
+---
+title: Core API
+description: Workflows, Content, and Schema APIs
+---
+
+import { Callout } from 'nextra/components'
+
+# Core API
+
+The core `@lytics/lio-client` provides three main APIs for interacting with Lytics.
+
+## Workflows API
+
+Monitor and query workflow execution status.
+
+### `workflows.list(options?)`
+
+List all workflow jobs, optionally filtered by workflow name:
+
+```typescript
+// All workflows
+const allJobs = await lio.workflows.list();
+
+// Filter by workflow name (kebab-case converted to snake_case)
+const syncJobs = await lio.workflows.list({ 
+  workflow: 'contentstack-import' 
+});
+```
+
+**Response:**
+```typescript
+{
+  data: Array<{
+    id: string;
+    name: string;
+    workflow: string;
+    status: 'sleeping' | 'running' | 'completed' | 'failed';
+    created: string;
+    updated: string;
+  }>
+}
+```
+
+### `workflows.get(jobId)`
+
+Get details for a specific workflow job:
+
+```typescript
+const job = await lio.workflows.get('job-abc123');
+```
+
+### `workflows.getLogs(jobId, options?)`
+
+Retrieve logs for a workflow job:
+
+```typescript
+const logs = await lio.workflows.getLogs('job-abc123', {
+  limit: 100,
+  offset: 0
+});
+```
+
+<Callout type="info">
+  **Workflow Name Conversion:** lio-client automatically converts kebab-case names (e.g., `contentstack-import`) to snake_case (e.g., `contentstack_import`) for the API.
+</Callout>
+
+## Content API
+
+Query content entities enriched by Lytics.
+
+### `content.getByUrl(url)`
+
+Fetch a content entity by URL:
+
+```typescript
+const content = await lio.content.getByUrl('example.com/blog/post');
+```
+
+**URL Normalization:** Protocols are automatically stripped (both `https://example.com/page` and `example.com/page` work).
+
+**Response:**
+```typescript
+{
+  url: string;
+  hashedurl: string;
+  uid: string;           // UID from content import workflow
+  title?: string;
+  description?: string;
+  lytics?: {             // Lytics-generated topics
+    [topic: string]: number;
+  };
+  _segments?: string[];  // Segments this content belongs to
+  // ... other fields from your content schema
+}
+```
+
+### `content.scan(options?)`
+
+Scan all content entities with pagination:
+
+```typescript
+// Scan all content (uses async generator for memory efficiency)
+for await (const batch of lio.content.scan()) {
+  console.log(`Processing ${batch.length} items`);
+  for (const item of batch) {
+    console.log(item.url, item.title);
+  }
+}
+
+// With custom page size
+for await (const batch of lio.content.scan({ pageSize: 50 })) {
+  // Process batch
+}
+```
+
+<Callout type="warning">
+  **Memory Efficient:** `scan()` uses async generators to avoid loading all content into memory at once.
+</Callout>
+
+## Schema API
+
+Introspect Lytics data schemas with automatic caching.
+
+### `schema.get(tableName, options?)`
+
+Get schema definition for a table:
+
+```typescript
+const contentSchema = await lio.schema.get('content');
+```
+
+**Response:**
+```typescript
+{
+  columns: Array<{
+    name: string;
+    type: string;
+    description?: string;
+  }>;
+  // ... other schema metadata
+}
+```
+
+**Caching:**
+- Schemas are cached in-memory for 1 hour by default
+- Reduces unnecessary API calls
+- Clear cache manually if needed
+
+### `schema.clearCache()`
+
+Clear the schema cache:
+
+```typescript
+lio.schema.clearCache();
+```
+
+<Callout type="info">
+  **Cache Benefits:** Schema rarely changes, so caching improves performance and reduces API load.
+</Callout>
+
+## Error Handling
+
+All APIs follow consistent error patterns:
+
+```typescript
+try {
+  const content = await lio.content.getByUrl('example.com/page');
+} catch (error) {
+  console.error('Status:', error.status);      // HTTP status code
+  console.error('Message:', error.message);    // Error message
+  console.error('Request ID:', error.request_id); // Lytics request ID for debugging
+}
+```
+
+## Type Safety
+
+All APIs have full TypeScript definitions:
+
+```typescript
+import type {
+  WorkflowListResponse,
+  WorkflowGetResponse,
+  ContentEntity,
+  SchemaResponse
+} from '@lytics/lio-client';
+```
+
+## Next Steps
+
+- [Plugins](/plugins) - Extend with CMS-specific functionality
+- [Examples](/examples) - Real-world integration patterns
