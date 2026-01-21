@@ -17,7 +17,8 @@ Fill the gap between Go SDK and JS/TS ecosystem. Enable any Lytics integration.
 
 **Start**: `pnpm install && pnpm build`  
 **Dev**: `pnpm dev` (watch mode)  
-**Test**: `pnpm test`
+**Test**: `pnpm test`  
+**Release**: `pnpm changeset` (see @.claude/rules/changesets.md)
 
 **Packages**: `pnpm -F "@lytics/lio-client" <command>`
 
@@ -38,6 +39,7 @@ Fill the gap between Go SDK and JS/TS ecosystem. Enable any Lytics integration.
 - @.claude/rules/testing.md - Vitest, mocking, patterns
 - @.claude/rules/api-patterns.md - Lytics API, auth, responses
 - @.claude/rules/publishing.md - **OIDC trusted publishing setup** (for npm releases)
+- @.claude/rules/changesets.md - **Version management workflow** (how to release)
 
 ## Anti-Patterns
 
