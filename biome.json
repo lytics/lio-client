@@ -34,7 +34,8 @@
         "packages/core/src/plugins/transport.ts",
         "packages/core/src/plugins/content.ts",
         "packages/core/src/plugins/workflows.ts",
-        "packages/contentstack/src/plugin.ts"
+        "packages/contentstack/src/plugin.ts",
+        "packages/contentstack/src/types.ts"
       ],
       "linter": {
         "rules": {

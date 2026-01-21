@@ -3,37 +3,55 @@
  */
 
 export interface ContentstackEntry {
-  url: string;
-  uid: string;
+  url?: string;
+  href?: string;
+  uid?: string;
   [key: string]: unknown;
 }
 
 export interface LyticsEnrichment {
-  topics: Record<string, number>;
+  topics?: Record<string, number>;
   hashedurl?: string;
   segments?: string[];
+  url?: string;
 }
 
 export interface EnrichedContentstackEntry extends ContentstackEntry {
-  _lytics: LyticsEnrichment;
+  _lytics?: LyticsEnrichment;
 }
 
-export interface WorkflowStatus {
-  id: string;
-  name: string;
-  workflow: string;
-  status: 'sleeping' | 'running' | 'completed' | 'failed';
-  updated: string;
-  config: Record<string, unknown>;
+export interface SyncStatus {
+  status: 'not_configured' | 'sleeping' | 'running' | 'completed' | 'failed';
+  lastSync: string | null;
+  entriesSynced: number;
+  contentTypes: string[];
+  workflowId?: string;
+}
+
+export interface ContentAnalytics {
+  totalEntries: number;
+  topTopics: Array<{ topic: string; count: number }>;
+  contentTypes: Record<string, number>;
 }
 
 export interface ContentstackPlugin {
   /** Check Contentstack workflow sync status */
-  getSyncStatus(): Promise<WorkflowStatus>;
-  
+  getSyncStatus(): Promise<SyncStatus>;
+
+  /** Get Lytics enrichment data for a Contentstack entry or URL */
+  getEnrichmentData(entryOrUrl: string | ContentstackEntry): Promise<any>;
+
+  /** Scan all Contentstack content in Lytics */
+  scanContent(options?: any): AsyncGenerator<any>;
+
+  /** Get content analytics for Contentstack entries */
+  getAnalytics(): Promise<ContentAnalytics>;
+
   /** Enrich a single entry with Lytics data */
-  enrich(entry: ContentstackEntry): Promise<EnrichedContentstackEntry>;
-  
+  enrich<T extends Record<string, any>>(entry: T): Promise<T & { _lytics?: LyticsEnrichment }>;
+
   /** Enrich multiple entries (batch) */
-  enrichMany(entries: ContentstackEntry[]): Promise<EnrichedContentstackEntry[]>;
+  enrichMany<T extends Record<string, any>>(
+    entries: T[]
+  ): Promise<Array<T & { _lytics?: LyticsEnrichment }>>;
 }
