@@ -37,6 +37,7 @@ Fill the gap between Go SDK and JS/TS ecosystem. Enable any Lytics integration.
 - @.claude/rules/typescript.md - Strict mode, types, patterns
 - @.claude/rules/testing.md - Vitest, mocking, patterns
 - @.claude/rules/api-patterns.md - Lytics API, auth, responses
+- @.claude/rules/publishing.md - **OIDC trusted publishing setup** (for npm releases)
 
 ## Anti-Patterns
 
