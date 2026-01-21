@@ -86,20 +86,57 @@ export const contentstackPlugin: PluginFunction = (plugin, instance: SDK, config
       /**
        * Get Lytics enrichment data for a Contentstack entry
        *
+       * Uses a hybrid matching strategy:
+       * 1. Try URL first (fast, indexed lookup)
+       * 2. Fallback to UID scan (handles URL changes)
+       *
        * @param entryOrUrl - Contentstack entry object or URL string
        *
        * @example
-       * const lyticsData = await lio.contentstack.getEnrichmentData('https://example.com/blog/post');
-       * console.log(lyticsData.lytics); // Topics
+       * // By URL
+       * const data = await lio.contentstack.getEnrichmentData('https://example.com/blog/post');
+       *
+       * // By entry (tries URL first, then UID)
+       * const entry = await csStack.entry('blt123').fetch();
+       * const data = await lio.contentstack.getEnrichmentData(entry);
        */
       async getEnrichmentData(entryOrUrl: any) {
-        const url = typeof entryOrUrl === 'string' ? entryOrUrl : entryOrUrl.url || entryOrUrl.href;
+        const isString = typeof entryOrUrl === 'string';
+        const url = isString ? entryOrUrl : entryOrUrl.url || entryOrUrl.href;
+        const uid = isString ? null : entryOrUrl.uid;
 
-        if (!url) {
-          throw new Error('Cannot extract URL from entry. Provide entry.url or a URL string.');
+        // Strategy 1: Try URL first (fast, works most of the time)
+        if (url) {
+          try {
+            plugin.emit('contentstack:lookup:url', { url });
+            return await sdk.content.getByUrl(url);
+          } catch (error: any) {
+            // URL not found or changed - try UID fallback
+            plugin.emit('contentstack:lookup:url-failed', { url, error: error.message });
+          }
         }
 
-        return await sdk.content.getByUrl(url);
+        // Strategy 2: Fallback to UID scan (handles URL changes, slug updates)
+        if (uid) {
+          plugin.emit('contentstack:lookup:uid', { uid });
+          const streamName = config.get('contentstack.streamName');
+
+          for await (const batch of sdk.content.scan({
+            filter: `stream = "${streamName}" AND uid = "${uid}"`,
+            limit: 1,
+          })) {
+            if (batch.length > 0) {
+              plugin.emit('contentstack:lookup:uid-success', { uid, url: batch[0].url });
+              return batch[0];
+            }
+          }
+
+          plugin.emit('contentstack:lookup:uid-failed', { uid });
+        }
+
+        throw new Error(
+          `Content not found in Lytics. Tried: ${url ? `URL (${url})` : ''}${url && uid ? ', ' : ''}${uid ? `UID (${uid})` : ''}`
+        );
       },
 
       /**
@@ -162,6 +199,8 @@ export const contentstackPlugin: PluginFunction = (plugin, instance: SDK, config
       /**
        * Enrich a Contentstack entry with Lytics data
        *
+       * Uses hybrid URL + UID matching for reliability.
+       *
        * @example
        * const entry = await csStack.entry('blt123').fetch();
        * const enriched = await lio.contentstack.enrich(entry);
@@ -170,13 +209,8 @@ export const contentstackPlugin: PluginFunction = (plugin, instance: SDK, config
       async enrich<T extends Record<string, any>>(entry: T): Promise<T & { _lytics?: any }> {
         plugin.emit('contentstack:enrich', { entry });
 
-        const url = entry.url || entry.href;
-        if (!url) {
-          return entry;
-        }
-
         try {
-          const lyticsData = await sdk.content.getByUrl(url);
+          const lyticsData = await this.getEnrichmentData(entry);
 
           return {
             ...entry,

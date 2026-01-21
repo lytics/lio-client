@@ -2,10 +2,17 @@
  * Types for Contentstack integration
  */
 
+/**
+ * Contentstack entry with standard fields
+ *
+ * The plugin uses hybrid matching:
+ * - url/href: Fast lookup (primary strategy)
+ * - uid: Fallback for URL changes (e.g., slug updates)
+ */
 export interface ContentstackEntry {
   url?: string;
   href?: string;
-  uid?: string;
+  uid?: string; // Contentstack entry UID (stable across URL changes)
   [key: string]: unknown;
 }
 
@@ -38,7 +45,13 @@ export interface ContentstackPlugin {
   /** Check Contentstack workflow sync status */
   getSyncStatus(): Promise<SyncStatus>;
 
-  /** Get Lytics enrichment data for a Contentstack entry or URL */
+  /**
+   * Get Lytics enrichment data for a Contentstack entry or URL
+   *
+   * Uses hybrid matching strategy:
+   * 1. Try URL first (fast, indexed)
+   * 2. Fallback to UID scan (handles URL changes)
+   */
   getEnrichmentData(entryOrUrl: string | ContentstackEntry): Promise<any>;
 
   /** Scan all Contentstack content in Lytics */
