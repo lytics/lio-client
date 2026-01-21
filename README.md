@@ -30,8 +30,21 @@ A modern JavaScript/TypeScript SDK for the [Lytics API](https://learn.lytics.com
 
 This is a monorepo with multiple packages:
 
-- **[@lytics/lio-client](./packages/core)** - Core Lytics API SDK (workflows, content, schema, segments)
-- **[@lytics/lio-client-contentstack](./packages/contentstack)** - Contentstack CMS integration plugin
+### Core SDK (Generic)
+
+- **[@lytics/lio-client](./packages/core)** - Universal Lytics API client
+  - Works with any Lytics account
+  - Generic APIs: workflows, content, schema
+  - No CMS-specific code
+  - Framework-agnostic
+
+### Integration Plugins (Optional)
+
+- **[@lytics/lio-client-contentstack](./packages/contentstack)** - Contentstack CMS integration
+  - Monitors `contentstack-import` workflow
+  - Enriches Contentstack entries with Lytics data
+  - Built for marketplace apps
+  - Optional dependency
 
 ## Quick Start
 
@@ -121,10 +134,19 @@ lio-client/
 
 ## Documentation
 
-- **[API Reference](./specs/api-discovery.md)** - Formal API documentation
+### SDK Documentation
+- **[Core Package](./packages/core/README.md)** - Core API reference
+- **[Contentstack Plugin](./packages/contentstack/README.md)** - CMS integration guide
+- **[Building Plugins](./PLUGINS.md)** - Create your own integrations
+
+### Specifications
+- **[API Discovery](./specs/api-discovery.md)** - Lytics API endpoints
 - **[Architecture](./specs/architecture.md)** - Plugin design patterns
-- **[Lytics API Docs](https://learn.lytics.com/api-docs)** - Official REST API documentation
-- **[Go SDK Reference](https://github.com/lytics/go-lytics)** - Mature Go client for comparison
+- **[Transport Layer](./specs/transport.md)** - HTTP client architecture
+
+### External Resources
+- **[Lytics API Docs](https://learn.lytics.com/api-docs)** - Official REST API
+- **[Go SDK Reference](https://github.com/lytics/go-lytics)** - Go client reference
 
 ## Contributing
 
