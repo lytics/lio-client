@@ -43,6 +43,10 @@ importers:
         version: 4.0.16(@types/node@25.0.3)(jiti@2.6.1)
 
   packages/contentstack:
+    dependencies:
+      '@lytics/sdk-kit':
+        specifier: ^0.1.0
+        version: 0.1.1(typescript@5.9.3)
     devDependencies:
       '@lytics/lio-client':
         specifier: workspace:*
@@ -55,6 +59,13 @@ importers:
         version: 5.9.3
 
   packages/core:
+    dependencies:
+      '@lytics/sdk-kit':
+        specifier: ^0.1.0
+        version: 0.1.1(typescript@5.9.3)
+      '@lytics/sdk-kit-plugins':
+        specifier: ^0.1.0
+        version: 0.1.2(@lytics/sdk-kit@0.1.1(typescript@5.9.3))
     devDependencies:
       tsup:
         specifier: ^8.5.1
@@ -448,6 +459,19 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lytics/sdk-kit-plugins@0.1.2':
+    resolution: {integrity: sha512-b1yp4jvi+xeaoyNYyTDXLr08QnIRvnQtpxW/0CM1KrkgVB27ZxGpE9nyWy3IRTVapmyu1GuWBoAWNJg4DKihHg==}
+    peerDependencies:
+      '@lytics/sdk-kit': ^0.1.1
+
+  '@lytics/sdk-kit@0.1.1':
+    resolution: {integrity: sha512-IDNeiQpuTwAeCh7H8WjxApos6RN7GSe1cW9ncBs+yg9Ja9Ekcxo6xC1U5O0uR4uxrkm84TMwN8HiP8Q74xi/CA==}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -2005,6 +2029,14 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@lytics/sdk-kit-plugins@0.1.2(@lytics/sdk-kit@0.1.1(typescript@5.9.3))':
+    dependencies:
+      '@lytics/sdk-kit': 0.1.1(typescript@5.9.3)
+
+  '@lytics/sdk-kit@0.1.1(typescript@5.9.3)':
+    optionalDependencies:
+      typescript: 5.9.3
 
   '@manypkg/find-root@1.1.0':
     dependencies:

@@ -31,6 +31,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "dependencies": {
+    "@lytics/sdk-kit": "^0.1.0"
+  },
   "peerDependencies": {
     "@lytics/lio-client": "workspace:*"
   },

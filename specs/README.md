@@ -11,4 +11,5 @@ Public specs for lio-client development.
 
 ### Implementation Details
 - **[architecture.md](./architecture.md)** - Plugin architecture and design patterns
+- **[transport.md](./transport.md)** - Transport layer architecture (SDK Kit integration)
 - **[api-discovery.md](./api-discovery.md)** - Lytics API reference (endpoints, auth, formats)
