@@ -1,9 +1,8 @@
 name: Release
 
 # This workflow runs after CI succeeds on the main branch.
-# By default, all packages are private and won't be published to npm.
-# To enable publishing: set "private": false in package.json and add NPM_TOKEN secret.
-# See README.md for detailed setup instructions.
+# Uses OIDC Trusted Publishing (no NPM_TOKEN needed).
+# See https://docs.npmjs.com/generating-provenance-statements
 
 on:
   workflow_run:
@@ -20,6 +19,11 @@ on:
         default: false
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write  # Required for OIDC trusted publishing
 
 jobs:
   release:
@@ -46,6 +50,21 @@ jobs:
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
+      # Ensure npm 11.5.1+ for trusted publishing support
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      # Explicitly configure @lytics scope to use npm registry (not GitHub Packages)
+      - name: Configure npm registry
+        run: |
+          # Remove any project-level .npmrc that might route @lytics to GitHub Packages
+          rm -f .npmrc
+          # Create .npmrc with explicit scoped registry for @lytics
+          # This ensures @lytics packages publish to npm, not GitHub Packages
+          echo "@lytics:registry=https://registry.npmjs.org/" > .npmrc
+          # Also configure pnpm to use npm registry for @lytics scope
+          pnpm config set @lytics:registry https://registry.npmjs.org/
+
       - name: Install Dependencies
         run: pnpm install
 
@@ -56,11 +75,16 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
+          # This creates a "Version Packages" PR when changesets are added
           version: pnpm changeset version
+          # This publishes to npm using OIDC trusted publishing (no NPM_TOKEN needed)
           publish: pnpm changeset publish
-          commit: 'chore(release): version packages'
-          title: 'chore(release): version packages'
+          # Commit message for version bumps
+          commit: 'chore: release packages'
+          # PR title for version bumps
+          title: 'chore: release packages'
+          # Create GitHub Releases with provenance
+          createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # No NPM_TOKEN needed - OIDC handles npm authentication!
