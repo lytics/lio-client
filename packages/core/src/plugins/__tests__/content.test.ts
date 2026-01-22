@@ -62,9 +62,17 @@ describe('contentPlugin', () => {
       const generator = (sdk as any).content.scan();
       await generator.next();
 
-      expect(mockPost).toHaveBeenCalledWith('/api/segment/scan', {
-        query: 'FILTER EXISTS hashedurl FROM content LIMIT 100 OFFSET 0',
-      });
+      // API expects SegmentQL as query parameter
+      expect(mockPost).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/segment\/scan\?segments=.*&limit=100/)
+      );
+
+      // Verify SegmentQL is correctly encoded
+      const callUrl = mockPost.mock.calls[0][0];
+      const params = new URLSearchParams(callUrl.split('?')[1]);
+      expect(params.get('segments')).toBe(
+        'FILTER EXISTS hashedurl FROM content LIMIT 100 OFFSET 0'
+      );
     });
 
     it('should use custom filter and limit', async () => {
@@ -77,9 +85,11 @@ describe('contentPlugin', () => {
       });
       await generator.next();
 
-      expect(mockPost).toHaveBeenCalledWith('/api/segment/scan', {
-        query: 'FILTER EXISTS title FROM content LIMIT 50 OFFSET 0',
-      });
+      // API expects SegmentQL as query parameter, not in body
+      const callUrl = mockPost.mock.calls[0][0];
+      const params = new URLSearchParams(callUrl.split('?')[1]);
+      expect(params.get('segments')).toBe('FILTER EXISTS title FROM content LIMIT 50 OFFSET 0');
+      expect(params.get('limit')).toBe('50');
     });
 
     it('should yield batches of entities', async () => {
