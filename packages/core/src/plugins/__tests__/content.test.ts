@@ -56,23 +56,24 @@ describe('contentPlugin', () => {
 
   describe('content.scan()', () => {
     it('should use default filter and limit', async () => {
-      const mockPostPlainText = vi.fn().mockResolvedValue({ data: [] });
-      (sdk as any).transport.postPlainText = mockPostPlainText;
+      const mockPost = vi.fn().mockResolvedValue({ data: [] });
+      (sdk as any).transport.post = mockPost;
 
       const generator = (sdk as any).content.scan();
       await generator.next();
 
-      // Verify it uses postPlainText with SegmentQL in body
-      // Note: '*' means "all", so no FILTER keyword needed
-      expect(mockPostPlainText).toHaveBeenCalledWith('/api/segment/scan', '* FROM content', {
-        limit: 100,
-        start: undefined,
-      });
+      // Verify it uses post with SegmentQL in body and plain text content type
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/segment/scan',
+        'FILTER * FROM content',
+        { limit: 100, start: undefined },
+        { contentType: 'text/plain', unwrap: false }
+      );
     });
 
     it('should use custom filter and limit', async () => {
-      const mockPostPlainText = vi.fn().mockResolvedValue({ data: [] });
-      (sdk as any).transport.postPlainText = mockPostPlainText;
+      const mockPost = vi.fn().mockResolvedValue({ data: [] });
+      (sdk as any).transport.post = mockPost;
 
       const generator = (sdk as any).content.scan({
         filter: 'EXISTS title',
@@ -81,10 +82,11 @@ describe('contentPlugin', () => {
       await generator.next();
 
       // Verify custom SegmentQL and limit
-      expect(mockPostPlainText).toHaveBeenCalledWith(
+      expect(mockPost).toHaveBeenCalledWith(
         '/api/segment/scan',
         'FILTER EXISTS title FROM content',
-        { limit: 50, start: undefined }
+        { limit: 50, start: undefined },
+        { contentType: 'text/plain', unwrap: false }
       );
     });
 
@@ -92,13 +94,13 @@ describe('contentPlugin', () => {
       const batch1 = [{ url: 'test1.com' }, { url: 'test2.com' }];
       const batch2 = [{ url: 'test3.com' }];
 
-      const mockPostPlainText = vi
+      const mockPost = vi
         .fn()
-        .mockResolvedValueOnce({ data: batch1, next: 'token123' })
+        .mockResolvedValueOnce({ data: batch1, _next: 'token123' })
         .mockResolvedValueOnce({ data: batch2 })
         .mockResolvedValueOnce({ data: [] });
 
-      (sdk as any).transport.postPlainText = mockPostPlainText;
+      (sdk as any).transport.post = mockPost;
 
       const results: any[] = [];
       for await (const batch of (sdk as any).content.scan({ limit: 2 })) {
@@ -110,14 +112,20 @@ describe('contentPlugin', () => {
       expect(results[1]).toEqual(batch2);
 
       // Verify pagination with next token
-      expect(mockPostPlainText).toHaveBeenNthCalledWith(1, '/api/segment/scan', '* FROM content', {
-        limit: 2,
-        start: undefined,
-      });
-      expect(mockPostPlainText).toHaveBeenNthCalledWith(2, '/api/segment/scan', '* FROM content', {
-        limit: 2,
-        start: 'token123',
-      });
+      expect(mockPost).toHaveBeenNthCalledWith(
+        1,
+        '/api/segment/scan',
+        'FILTER * FROM content',
+        { limit: 2, start: undefined },
+        { contentType: 'text/plain', unwrap: false }
+      );
+      expect(mockPost).toHaveBeenNthCalledWith(
+        2,
+        '/api/segment/scan',
+        'FILTER * FROM content',
+        { limit: 2, start: 'token123' },
+        { contentType: 'text/plain', unwrap: false }
+      );
     });
   });
 

@@ -43,8 +43,12 @@ export interface ApiError {
 
 export interface LyticsTransportPlugin {
   get<T = any>(path: string, params?: Record<string, any>): Promise<T>;
-  post<T = any>(path: string, body?: any, params?: Record<string, any>): Promise<T>;
-  postPlainText<T = any>(path: string, body: string, params?: Record<string, any>): Promise<T>;
+  post<T = any>(
+    path: string,
+    body?: any,
+    params?: Record<string, any>,
+    options?: { contentType?: 'application/json' | 'text/plain'; unwrap?: boolean }
+  ): Promise<T>;
 }
 
 /**
@@ -167,37 +171,15 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
       /**
        * POST request to Lytics API
        */
-      async post<T = any>(path: string, body?: any, params?: Record<string, any>): Promise<T> {
-        const url = buildUrl(path, params);
-
-        plugin.emit('lytics:request', { method: 'POST', path, params, body });
-
-        const request: TransportRequest = {
-          url,
-          method: 'POST',
-          data: body,
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-        };
-
-        const response = await sdkTransport.send(request);
-        const data = unwrapResponse<T>(response);
-
-        plugin.emit('lytics:response', { method: 'POST', path, status: response.status });
-
-        return data;
-      },
-
-      /**
-       * POST request with plain text body (for SegmentQL)
-       */
-      async postPlainText<T = any>(
+      async post<T = any>(
         path: string,
-        body: string,
-        params?: Record<string, any>
+        body?: any,
+        params?: Record<string, any>,
+        options?: { contentType?: 'application/json' | 'text/plain'; unwrap?: boolean }
       ): Promise<T> {
+        const contentType = options?.contentType || 'application/json';
+        const shouldUnwrap = options?.unwrap !== false; // Default to true
+
         const url = buildUrl(path, params);
 
         plugin.emit('lytics:request', { method: 'POST', path, params, body });
@@ -206,14 +188,16 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
           url,
           method: 'POST',
           data: body,
+          contentType,
           headers: {
             Accept: 'application/json',
-            'Content-Type': 'text/plain',
           },
         };
 
         const response = await sdkTransport.send(request);
-        const data = unwrapResponse<T>(response);
+
+        // Unwrap response if requested (default behavior for JSON endpoints)
+        const data = shouldUnwrap ? unwrapResponse<T>(response) : (response.data as T);
 
         plugin.emit('lytics:response', { method: 'POST', path, status: response.status });
 

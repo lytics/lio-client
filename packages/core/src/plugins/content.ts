@@ -150,16 +150,20 @@ export const contentPlugin: PluginFunction = (plugin, instance) => {
 
           try {
             // Build SegmentQL query (plain text body)
-            // Format: * FROM content OR FILTER <condition> FROM content
-            // Note: '*' means "all", so don't prepend FILTER keyword
-            const segmentQL = filter === '*' ? '* FROM content' : `FILTER ${filter} FROM content`;
+            // Format: FILTER <condition> FROM content (wildcard '*' still needs FILTER keyword)
+            const segmentQL = `FILTER ${filter} FROM content`;
 
             // Use /api/segment/scan with ad-hoc SegmentQL query
             // The API expects SegmentQL as plain text in the request body
-            const response = await transport.postPlainText<{
+            const response = await transport.post<{
               data: ContentEntity[];
-              next?: string;
-            }>('/api/segment/scan', segmentQL, { limit, start: nextToken });
+              _next?: string;
+            }>(
+              '/api/segment/scan',
+              segmentQL,
+              { limit, start: nextToken },
+              { contentType: 'text/plain', unwrap: false }
+            );
 
             const entities = response.data || [];
 
@@ -177,9 +181,9 @@ export const contentPlugin: PluginFunction = (plugin, instance) => {
 
             yield entities;
 
-            // Check for next page token
-            if (response.next) {
-              nextToken = response.next;
+            // Check for next page token (Lytics uses _next)
+            if (response._next) {
+              nextToken = response._next;
             } else {
               hasMore = false;
             }
