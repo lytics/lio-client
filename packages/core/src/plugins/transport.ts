@@ -44,6 +44,7 @@ export interface ApiError {
 export interface LyticsTransportPlugin {
   get<T = any>(path: string, params?: Record<string, any>): Promise<T>;
   post<T = any>(path: string, body?: any, params?: Record<string, any>): Promise<T>;
+  postPlainText<T = any>(path: string, body: string, params?: Record<string, any>): Promise<T>;
 }
 
 /**
@@ -178,6 +179,36 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
+          },
+        };
+
+        const response = await sdkTransport.send(request);
+        const data = unwrapResponse<T>(response);
+
+        plugin.emit('lytics:response', { method: 'POST', path, status: response.status });
+
+        return data;
+      },
+
+      /**
+       * POST request with plain text body (for SegmentQL)
+       */
+      async postPlainText<T = any>(
+        path: string,
+        body: string,
+        params?: Record<string, any>
+      ): Promise<T> {
+        const url = buildUrl(path, params);
+
+        plugin.emit('lytics:request', { method: 'POST', path, params, body });
+
+        const request: TransportRequest = {
+          url,
+          method: 'POST',
+          data: body,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'text/plain',
           },
         };
 

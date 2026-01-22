@@ -96,10 +96,10 @@ const content = await lio.content.getByUrl('example.com/blog/post');
 
 ### `content.scan(options?)`
 
-Scan all content entities with pagination:
+Scan content entities using ad-hoc SegmentQL queries:
 
 ```typescript
-// Scan all content (uses async generator for memory efficiency)
+// Scan all content (default filter: *)
 for await (const batch of lio.content.scan()) {
   console.log(`Processing ${batch.length} items`);
   for (const item of batch) {
@@ -107,14 +107,66 @@ for await (const batch of lio.content.scan()) {
   }
 }
 
-// With custom page size
-for await (const batch of lio.content.scan({ pageSize: 50 })) {
-  // Process batch
+// Filter with SegmentQL
+for await (const batch of lio.content.scan({
+  filter: 'AND (EXISTS title, aspects = "article")',
+  limit: 50
+})) {
+  // Process only articles with titles
+}
+
+// Filter by date
+for await (const batch of lio.content.scan({
+  filter: '_created > "now-30d"',
+  limit: 100
+})) {
+  // Process content from last 30 days
 }
 ```
 
+**Options:**
+- `filter` (string): SegmentQL filter expression (default: `*` for all content)
+- `limit` (number): Results per page (default: 100)
+- `fields` (string[]): Specific fields to return
+
+<Callout type="info">
+  **SegmentQL Syntax:** Use Lytics SegmentQL for filtering: `EXISTS field`, `field = "value"`, `AND (...)`, `OR (...)`. See [Lytics SegmentQL docs](https://learn.lytics.com/documentation/product/features/segmentation/segment-ql) for full syntax.
+</Callout>
+
+### `content.scanSegment(segmentId, options?)`
+
+Scan content from a saved segment (created in Lytics UI):
+
+```typescript
+// Scan the 'all_documents' segment (created automatically by Lytics)
+for await (const batch of lio.content.scanSegment('all_documents')) {
+  console.log(`Got ${batch.length} documents`);
+}
+
+// Scan custom segment by ID or slug
+for await (const batch of lio.content.scanSegment('blog_articles')) {
+  // Process blog articles defined in Lytics segment
+}
+
+// Export high-performing content to another system
+const allContent = [];
+for await (const batch of lio.content.scanSegment('high_performing_content', { limit: 50 })) {
+  allContent.push(...batch);
+}
+await exportToContentful(allContent);
+```
+
+**Parameters:**
+- `segmentId` (string): Segment ID or slug from Lytics
+- `options.limit` (number): Results per page (default: 100)
+- `options.fields` (string[]): Specific fields to return
+
+<Callout type="success">
+  **Reuse Business Logic:** `scanSegment()` lets you reuse complex SegmentQL queries defined in Lytics UI, avoiding duplication in your code.
+</Callout>
+
 <Callout type="warning">
-  **Memory Efficient:** `scan()` uses async generators to avoid loading all content into memory at once.
+  **Memory Efficient:** Both `scan()` and `scanSegment()` use async generators to avoid loading all content into memory at once.
 </Callout>
 
 ## Schema API
