@@ -1,6 +1,6 @@
 {
   "name": "@lytics/lio-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript/JavaScript SDK for the Lytics API - plugin-based client for all Lytics integrations",
   "private": false,
   "type": "module",
@@ -23,7 +23,13 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "keywords": ["lytics", "sdk", "api-client", "content", "analytics"],
+  "keywords": [
+    "lytics",
+    "sdk",
+    "api-client",
+    "content",
+    "analytics"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/lytics/lio-client.git",

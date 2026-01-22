@@ -1,5 +1,12 @@
 # @lytics/lio-client-contentstack
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [c67b8ba]
+  - @lytics/lio-client@0.1.1
+
 ## 0.1.1
 
 ### Patch Changes
