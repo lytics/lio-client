@@ -146,10 +146,11 @@ export const contentPlugin: PluginFunction = (plugin, instance) => {
           plugin.emit('content:scan-batch', { offset, limit });
 
           try {
-            // Use /api/segment/scan with ad-hoc query
-            const response = await transport.post<{ data: ContentEntity[] }>('/api/segment/scan', {
-              query,
-            });
+            // Use /api/segment/scan with ad-hoc SegmentQL query
+            // The API expects SegmentQL as a query parameter
+            const response = await transport.post<{ data: ContentEntity[]; total?: number }>(
+              `/api/segment/scan?segments=${encodeURIComponent(query)}&limit=${limit}`
+            );
 
             const entities = response.data || [];
 
