@@ -127,6 +127,56 @@ const topTopics = [...analytics.topTopics.entries()]
 console.log('  Top topics:', topTopics.map(([t]) => t).join(', '));
 ```
 
+## Filter Content with SegmentQL
+
+Query specific content using Lytics SegmentQL:
+
+```typescript
+import { createLioClient } from '@lytics/lio-client';
+
+const lio = createLioClient({
+  apiKey: process.env.LYTICS_API_KEY
+});
+
+await lio.init();
+
+// Find articles from the last 30 days
+console.log('📅 Recent articles:');
+for await (const batch of lio.content.scan({
+  filter: 'AND (_created > "now-30d", aspects = "article")',
+  limit: 50
+})) {
+  for (const article of batch) {
+    console.log(`  - ${article.title} (${article._created})`);
+  }
+}
+
+// Find high-performing content with multiple topics
+console.log('\n🔥 High-performing multi-topic content:');
+for await (const batch of lio.content.scan({
+  filter: 'AND (pageviews > 1000, EXISTS lytics.technology, EXISTS lytics.marketing)',
+  limit: 20
+})) {
+  for (const content of batch) {
+    const topics = Object.keys(content.lytics || {}).slice(0, 3).join(', ');
+    console.log(`  - ${content.title}: ${topics}`);
+  }
+}
+
+// Use saved segments for complex queries
+console.log('\n📊 Content from saved segment:');
+for await (const batch of lio.content.scanSegment('high_performing_content')) {
+  console.log(`  Got ${batch.length} high-performing articles`);
+  for (const article of batch) {
+    console.log(`  - ${article.title} (pageviews: ${article.pageviews})`);
+  }
+}
+```
+
+<Callout type="success">
+  **Reuse Business Logic:** Use `scanSegment()` to reference complex SegmentQL queries defined in Lytics UI, keeping your code DRY.
+</Callout>
+
 ## Scheduled Content Audit
 
 Run daily to detect content without enrichment:

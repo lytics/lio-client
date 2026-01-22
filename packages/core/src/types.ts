@@ -76,6 +76,13 @@ export interface ContentPlugin {
     limit?: number;
     fields?: string[];
   }): AsyncGenerator<ContentEntity[], void, undefined>;
+  scanSegment(
+    segmentId: string,
+    options?: {
+      limit?: number;
+      fields?: string[];
+    }
+  ): AsyncGenerator<ContentEntity[], void, undefined>;
 }
 
 export interface SchemaField {
