@@ -63,7 +63,8 @@ describe('contentPlugin', () => {
       await generator.next();
 
       // Verify it uses postPlainText with SegmentQL in body
-      expect(mockPostPlainText).toHaveBeenCalledWith('/api/segment/scan', 'FILTER * FROM content', {
+      // Note: '*' means "all", so no FILTER keyword needed
+      expect(mockPostPlainText).toHaveBeenCalledWith('/api/segment/scan', '* FROM content', {
         limit: 100,
         start: undefined,
       });
@@ -109,18 +110,14 @@ describe('contentPlugin', () => {
       expect(results[1]).toEqual(batch2);
 
       // Verify pagination with next token
-      expect(mockPostPlainText).toHaveBeenNthCalledWith(
-        1,
-        '/api/segment/scan',
-        'FILTER * FROM content',
-        { limit: 2, start: undefined }
-      );
-      expect(mockPostPlainText).toHaveBeenNthCalledWith(
-        2,
-        '/api/segment/scan',
-        'FILTER * FROM content',
-        { limit: 2, start: 'token123' }
-      );
+      expect(mockPostPlainText).toHaveBeenNthCalledWith(1, '/api/segment/scan', '* FROM content', {
+        limit: 2,
+        start: undefined,
+      });
+      expect(mockPostPlainText).toHaveBeenNthCalledWith(2, '/api/segment/scan', '* FROM content', {
+        limit: 2,
+        start: 'token123',
+      });
     });
   });
 

@@ -150,8 +150,9 @@ export const contentPlugin: PluginFunction = (plugin, instance) => {
 
           try {
             // Build SegmentQL query (plain text body)
-            // Format: FILTER <condition> FROM content
-            const segmentQL = `FILTER ${filter} FROM content`;
+            // Format: * FROM content OR FILTER <condition> FROM content
+            // Note: '*' means "all", so don't prepend FILTER keyword
+            const segmentQL = filter === '*' ? '* FROM content' : `FILTER ${filter} FROM content`;
 
             // Use /api/segment/scan with ad-hoc SegmentQL query
             // The API expects SegmentQL as plain text in the request body
