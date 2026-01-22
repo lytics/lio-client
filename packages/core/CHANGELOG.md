@@ -1,5 +1,14 @@
 # @lytics/lio-client
 
+## 0.1.4
+
+### Patch Changes
+
+- 94645ae: Fix SegmentQL syntax for wildcard content scanning
+
+  - Fixed `content.scan()` default to use `* FROM content` instead of `FILTER * FROM content`
+  - Resolves 400 Bad Request when scanning all content without a filter
+
 ## 0.1.3
 
 ### Patch Changes
