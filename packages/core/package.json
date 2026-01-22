@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@lytics/sdk-kit": "^0.1.0",
-    "@lytics/sdk-kit-plugins": "^0.1.0"
+    "@lytics/sdk-kit-plugins": "^0.1.3"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

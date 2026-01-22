@@ -67,8 +67,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.1(typescript@5.9.3)
       '@lytics/sdk-kit-plugins':
-        specifier: ^0.1.0
-        version: 0.1.2(@lytics/sdk-kit@0.1.1(typescript@5.9.3))
+        specifier: ^0.1.3
+        version: 0.1.3(@lytics/sdk-kit@0.1.1(typescript@5.9.3))
     devDependencies:
       tsup:
         specifier: ^8.5.1
@@ -463,8 +463,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@lytics/sdk-kit-plugins@0.1.2':
-    resolution: {integrity: sha512-b1yp4jvi+xeaoyNYyTDXLr08QnIRvnQtpxW/0CM1KrkgVB27ZxGpE9nyWy3IRTVapmyu1GuWBoAWNJg4DKihHg==}
+  '@lytics/sdk-kit-plugins@0.1.3':
+    resolution: {integrity: sha512-So+lQnj5dottABtVkh6Z3XgDYjhO3nTes/qGZWWZD4A86dC64RN5I0N9mRFsrYASjXSpg4ovX9THLQfSp5x6wA==}
     peerDependencies:
       '@lytics/sdk-kit': ^0.1.1
 
@@ -2044,7 +2044,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@lytics/sdk-kit-plugins@0.1.2(@lytics/sdk-kit@0.1.1(typescript@5.9.3))':
+  '@lytics/sdk-kit-plugins@0.1.3(@lytics/sdk-kit@0.1.1(typescript@5.9.3))':
     dependencies:
       '@lytics/sdk-kit': 0.1.1(typescript@5.9.3)
 
