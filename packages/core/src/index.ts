@@ -7,6 +7,7 @@
 
 // Main client
 export { createLioClient } from './client';
+export { aiPlugin } from './plugins/ai';
 export type {
   ContentEntityResponse,
   ContentScanOptions,
@@ -14,6 +15,7 @@ export type {
 export { contentPlugin } from './plugins/content';
 export type { SchemaResponse } from './plugins/schema';
 export { schemaPlugin } from './plugins/schema';
+export { segmentsPlugin } from './plugins/segments';
 // Plugin types
 export type {
   ApiError,
@@ -32,6 +34,7 @@ export type {
 export { workflowsPlugin } from './plugins/workflows';
 // Types
 export type {
+  AiPlugin,
   ContentEntity,
   ContentPlugin,
   LioClient,
@@ -39,6 +42,10 @@ export type {
   Schema,
   SchemaField,
   SchemaPlugin,
+  Segment,
+  SegmentGetOptions,
+  SegmentListOptions,
+  SegmentsPlugin,
   WorkflowJob,
   WorkflowsPlugin,
 } from './types';

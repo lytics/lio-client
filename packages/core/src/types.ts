@@ -28,6 +28,12 @@ export interface LioClient {
   /** Schema API - get table schemas */
   schema: SchemaPlugin;
 
+  /** Segments API - list and get audience segments */
+  segments: SegmentsPlugin;
+
+  /** AI API - LLM-ready context generation */
+  ai: AiPlugin;
+
   /** Event system from SDK Kit */
   on(event: string, handler: (...args: any[]) => void): () => void;
   off(event: string, handler: (...args: any[]) => void): void;
@@ -99,4 +105,66 @@ export interface Schema {
 export interface SchemaPlugin {
   get(table: string): Promise<Schema>;
   clearCache(table?: string): void;
+}
+
+export interface Segment {
+  id: string;
+  slug_name: string;
+  name: string;
+  description?: string;
+  kind: string;
+  table: string;
+  size?: number;
+  tags?: string[] | null;
+  groups?: string[] | null;
+  fields?: string[] | null;
+  includes?: string[] | null;
+  identities?: string[] | null;
+  segment_ql?: string;
+  ast?: Record<string, unknown>;
+  invalid?: boolean;
+  invalid_reason?: string;
+  deleted?: boolean;
+  is_public?: boolean;
+  public_name?: string;
+  category?: string;
+  save_hist?: boolean;
+  field_changes_fields?: string[] | null;
+  emit_trigger?: boolean;
+  schedule_exit?: boolean;
+  expires_at?: string | null;
+  datemath_calc?: boolean;
+  forward_datemath?: boolean;
+  author_id?: string;
+  aid?: number;
+  account_id?: string;
+  eval_segml?: boolean;
+  created: string;
+  updated: string;
+  [key: string]: unknown;
+}
+
+export interface SegmentListOptions {
+  /** Entity table filter (default: "user", use "all" for all tables) */
+  table?: string;
+  /** Validity filter: "true" | "false" | "all" (default: "all") */
+  valid?: string;
+  /** Kind filter: "segment" | "goal" | "aspect" | "conversion" | "managed" | "all" */
+  kind?: string;
+  /** Exclude predefined segments (default: false) */
+  filterPredefined?: boolean;
+}
+
+export interface SegmentGetOptions {
+  /** Include cached segment sizes (default: false) */
+  sizes?: boolean;
+}
+
+export interface SegmentsPlugin {
+  list(options?: SegmentListOptions): Promise<Segment[]>;
+  get(slugOrId: string, options?: SegmentGetOptions): Promise<Segment>;
+}
+
+export interface AiPlugin {
+  segmentPrompt(segmentId: string): Promise<string>;
 }

@@ -1,6 +1,8 @@
 import { SDK } from '@lytics/sdk-kit';
+import { aiPlugin } from './plugins/ai';
 import { contentPlugin } from './plugins/content';
 import { schemaPlugin } from './plugins/schema';
+import { segmentsPlugin } from './plugins/segments';
 import { lyticsTransportPlugin } from './plugins/transport';
 import { workflowsPlugin } from './plugins/workflows';
 import type { LioClient, LioClientConfig } from './types';
@@ -48,7 +50,13 @@ export function createLioClient(config: LioClientConfig): LioClient {
   });
 
   // Register core plugins
-  sdk.use(lyticsTransportPlugin).use(workflowsPlugin).use(contentPlugin).use(schemaPlugin);
+  sdk
+    .use(lyticsTransportPlugin)
+    .use(workflowsPlugin)
+    .use(contentPlugin)
+    .use(schemaPlugin)
+    .use(segmentsPlugin)
+    .use(aiPlugin);
 
   // Register any additional plugins from config
   if (plugins) {
