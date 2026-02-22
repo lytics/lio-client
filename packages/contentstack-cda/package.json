@@ -1,6 +1,6 @@
 {
   "name": "@lytics/lio-client-contentstack-cda",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Contentstack Content Delivery API plugin for Lytics lio-client",
   "private": false,
   "type": "module",
