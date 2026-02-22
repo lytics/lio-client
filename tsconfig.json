@@ -15,7 +15,9 @@
       "@lytics/lio-client": ["packages/core/src"],
       "@lytics/lio-client/*": ["packages/core/src/*"],
       "@lytics/lio-client-contentstack": ["packages/contentstack/src"],
-      "@lytics/lio-client-contentstack/*": ["packages/contentstack/src/*"]
+      "@lytics/lio-client-contentstack/*": ["packages/contentstack/src/*"],
+      "@lytics/lio-client-contentstack-cda": ["packages/contentstack-cda/src"],
+      "@lytics/lio-client-contentstack-cda/*": ["packages/contentstack-cda/src/*"]
     }
   },
   "exclude": ["node_modules"]
