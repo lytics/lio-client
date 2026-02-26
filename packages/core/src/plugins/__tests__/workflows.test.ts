@@ -61,7 +61,7 @@ describe('workflowsPlugin', () => {
 
       await (sdk as any).workflows.get('123');
 
-      expect(mockGet).toHaveBeenCalledWith('/v2/job/123');
+      expect(mockGet).toHaveBeenCalledWith('/v2/job/123', undefined);
     });
   });
 
@@ -72,7 +72,7 @@ describe('workflowsPlugin', () => {
 
       await (sdk as any).workflows.getLogs();
 
-      expect(mockGet).toHaveBeenCalledWith('/v2/job/logs');
+      expect(mockGet).toHaveBeenCalledWith('/v2/job/logs', undefined);
     });
 
     it('should call transport.get for specific job logs', async () => {
@@ -81,7 +81,44 @@ describe('workflowsPlugin', () => {
 
       await (sdk as any).workflows.getLogs('123');
 
-      expect(mockGet).toHaveBeenCalledWith('/v2/job/123/logs');
+      expect(mockGet).toHaveBeenCalledWith('/v2/job/123/logs', undefined);
+    });
+  });
+
+  describe('with accountId configured', () => {
+    let sdkWithAccount: SDK;
+
+    beforeEach(() => {
+      sdkWithAccount = new SDK({ apiKey: 'test-key', accountId: 'acct-123' });
+      sdkWithAccount.use(lyticsTransportPlugin);
+      sdkWithAccount.use(workflowsPlugin);
+    });
+
+    it('should pass account_id on list()', async () => {
+      const mockGet = vi.fn().mockResolvedValue([]);
+      (sdkWithAccount as any).transport.get = mockGet;
+
+      await (sdkWithAccount as any).workflows.list();
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/job', { account_id: 'acct-123' });
+    });
+
+    it('should pass account_id on get()', async () => {
+      const mockGet = vi.fn().mockResolvedValue({ id: '123' });
+      (sdkWithAccount as any).transport.get = mockGet;
+
+      await (sdkWithAccount as any).workflows.get('123');
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/job/123', { account_id: 'acct-123' });
+    });
+
+    it('should pass account_id on getLogs()', async () => {
+      const mockGet = vi.fn().mockResolvedValue({ logs: [] });
+      (sdkWithAccount as any).transport.get = mockGet;
+
+      await (sdkWithAccount as any).workflows.getLogs('123');
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/job/123/logs', { account_id: 'acct-123' });
     });
   });
 });

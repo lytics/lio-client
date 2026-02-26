@@ -1,6 +1,8 @@
 import { SDK } from '@lytics/sdk-kit';
 import { aiPlugin } from './plugins/ai';
 import { contentPlugin } from './plugins/content';
+import { jobsPlugin } from './plugins/jobs';
+import { providersPlugin } from './plugins/providers';
 import { schemaPlugin } from './plugins/schema';
 import { segmentsPlugin } from './plugins/segments';
 import { lyticsTransportPlugin } from './plugins/transport';
@@ -36,13 +38,14 @@ export function createLioClient(config: LioClientConfig): LioClient {
   }
 
   // Extract Lio-specific config (to avoid duplication in SDK config)
-  const { apiKey, baseUrl, plugins, ...sdkConfig } = config;
+  const { apiKey, baseUrl, accountId, plugins, ...sdkConfig } = config;
 
   // Create SDK instance with config
   const sdk = new SDK({
     name: 'lio-client',
     version: '0.1.0',
     apiKey,
+    accountId,
     transport: {
       baseUrl: baseUrl || 'https://api.lytics.io',
     },
@@ -56,7 +59,9 @@ export function createLioClient(config: LioClientConfig): LioClient {
     .use(contentPlugin)
     .use(schemaPlugin)
     .use(segmentsPlugin)
-    .use(aiPlugin);
+    .use(aiPlugin)
+    .use(jobsPlugin)
+    .use(providersPlugin);
 
   // Register any additional plugins from config
   if (plugins) {

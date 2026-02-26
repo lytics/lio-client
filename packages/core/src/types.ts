@@ -11,6 +11,9 @@ export interface LioClientConfig {
   /** Base URL for Lytics API (default: https://api.lytics.io) */
   baseUrl?: string;
 
+  /** Lytics account ID (required for jobs and providers endpoints) */
+  accountId?: string;
+
   /** Optional plugins to load (e.g., Contentstack integration) */
   plugins?: PluginFunction[];
 }
@@ -34,6 +37,12 @@ export interface LioClient {
   /** AI API - LLM-ready context generation */
   ai: AiPlugin;
 
+  /** Jobs API - list integration jobs */
+  jobs: JobsPlugin;
+
+  /** Providers API - list integration providers */
+  providers: ProvidersPlugin;
+
   /** Event system from SDK Kit */
   on(event: string, handler: (...args: any[]) => void): () => void;
   off(event: string, handler: (...args: any[]) => void): void;
@@ -50,9 +59,20 @@ export interface WorkflowJob {
   id: string;
   name: string;
   workflow: string;
-  status: 'sleeping' | 'running' | 'completed' | 'failed';
+  status: 'sleeping' | 'running' | 'completed' | 'failed' | 'paused';
   updated: string;
   config: Record<string, unknown>;
+  account_id?: string;
+  workflow_id?: string;
+  description?: string;
+  created?: string;
+  user_id?: string;
+  api_token_auth_id?: string;
+  auth_ids?: string[];
+  deleted?: boolean;
+  expires_at?: string | null;
+  drop_events_during_quiet_window?: boolean;
+  meta?: unknown | null;
 }
 
 export interface WorkflowsPlugin {
@@ -62,7 +82,12 @@ export interface WorkflowsPlugin {
 export interface ContentEntity {
   url: string;
   hashedurl?: string[];
+  /** @deprecated Use `global` for display-name scores or `freebase` for internal-name scores */
   lytics?: Record<string, number>;
+  /** Topic scores keyed by display name (e.g., "Artificial Intelligence": 0.95) */
+  global?: Record<string, number>;
+  /** Topic scores keyed by internal/freebase name */
+  freebase?: Record<string, number>;
   title?: string | null;
   author?: string | null;
   description?: string | null;
@@ -184,4 +209,80 @@ export interface SegmentsPlugin {
 
 export interface AiPlugin {
   segmentPrompt(segmentId: string): Promise<string>;
+}
+
+export interface Job {
+  id: string;
+  account_id: string;
+  name: string;
+  description: string;
+  workflow: string;
+  workflow_id: string;
+  status: 'running' | 'sleeping' | 'paused' | 'completed' | 'failed';
+  created: string;
+  updated: string;
+  user_id: string;
+  api_token_auth_id?: string;
+  auth_ids: string[];
+  config: Record<string, unknown>;
+  deleted: boolean;
+  expires_at: string | null;
+  drop_events_during_quiet_window?: boolean;
+  meta?: unknown | null;
+}
+
+export interface JobsPlugin {
+  list(options?: JobListOptions): Promise<Job[]>;
+}
+
+export interface JobListOptions {
+  /** Show completed jobs */
+  showCompleted?: boolean;
+  /** Show job state info */
+  showState?: boolean;
+  /** Show all jobs including completed */
+  showAll?: boolean;
+}
+
+export interface Provider {
+  id: string;
+  slug: string;
+  name: string;
+  namespace: string;
+  description: string;
+  categories: string[];
+  hidden: boolean;
+  custom: boolean;
+  connected: boolean;
+  documentation: string;
+  no_auth: boolean;
+  auth_description: string;
+  auths: ProviderAuth[];
+  created: string;
+  updated: string;
+}
+
+export interface ProviderAuth {
+  name: string;
+  display_name: string;
+  type: string;
+  v2_type: string;
+  hidden: boolean;
+  auth_description?: string;
+  config: ProviderAuthConfig[];
+}
+
+export interface ProviderAuthConfig {
+  control?: string;
+  type: string;
+  label: string;
+  name: string;
+  sort_order?: number;
+  optional?: boolean;
+  description?: string;
+  suffix?: string;
+}
+
+export interface ProvidersPlugin {
+  list(): Promise<Provider[]>;
 }
