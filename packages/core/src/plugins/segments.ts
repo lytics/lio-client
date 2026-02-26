@@ -7,7 +7,14 @@
  */
 
 import type { PluginFunction, SDK } from '@lytics/sdk-kit';
-import type { Segment, SegmentGetOptions, SegmentListOptions, SegmentsPlugin } from '../types';
+import type {
+  Segment,
+  SegmentGetOptions,
+  SegmentListOptions,
+  SegmentSize,
+  SegmentSizesOptions,
+  SegmentsPlugin,
+} from '../types';
 import type { LyticsTransportPlugin } from './transport';
 
 export const segmentsPlugin: PluginFunction = (plugin, instance) => {
@@ -64,6 +71,33 @@ export const segmentsPlugin: PluginFunction = (plugin, instance) => {
         plugin.emit('segments:got', { slugOrId });
 
         return segment;
+      },
+      // NOTE: Uses the v1 /api/segment/sizes endpoint which returns pre-computed
+      // sizes from a bulk KV blob (sub-100ms). Waiting on lio PR to add ?sizes=true
+      // support to GET /v2/segment (list), at which point this can be replaced by
+      // passing sizes: true to list().
+      async sizes(options?: SegmentSizesOptions): Promise<SegmentSize[]> {
+        plugin.emit('segments:sizes', { options });
+
+        const transport = (instance as SDK & { transport: LyticsTransportPlugin }).transport;
+        if (!transport) {
+          throw new Error('Transport plugin not registered. Use lyticsTransportPlugin.');
+        }
+
+        const params: Record<string, string> = {};
+        if (options?.table) params.table = options.table;
+        if (options?.ids) params.ids = options.ids.join(',');
+
+        const response = await transport.get<SegmentSize[]>(
+          '/api/segment/sizes',
+          Object.keys(params).length > 0 ? params : undefined
+        );
+
+        const sizes = response ?? [];
+
+        plugin.emit('segments:sized', { count: sizes.length });
+
+        return sizes;
       },
     } as SegmentsPlugin,
   });

@@ -45,6 +45,8 @@ export type {
   Segment,
   SegmentGetOptions,
   SegmentListOptions,
+  SegmentSize,
+  SegmentSizesOptions,
   SegmentsPlugin,
   WorkflowJob,
   WorkflowsPlugin,
