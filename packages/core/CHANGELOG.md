@@ -1,5 +1,11 @@
 # @lytics/lio-client
 
+## 0.2.1
+
+### Patch Changes
+
+- 91703f9: Add segments.sizes() method for bulk segment size fetching via v1 endpoint
+
 ## 0.2.0
 
 ### Minor Changes
