@@ -152,18 +152,16 @@ describe('segmentsPlugin', () => {
     });
 
     it('should pass sizes param', async () => {
-      const mockGet = vi
-        .fn()
-        .mockResolvedValue({
-          id: '1',
-          slug_name: 'test',
-          name: 'Test',
-          kind: 'segment',
-          table: 'user',
-          size: 1000,
-          created: '2024-01-01',
-          updated: '2024-01-01',
-        });
+      const mockGet = vi.fn().mockResolvedValue({
+        id: '1',
+        slug_name: 'test',
+        name: 'Test',
+        kind: 'segment',
+        table: 'user',
+        size: 1000,
+        created: '2024-01-01',
+        updated: '2024-01-01',
+      });
       (sdk as any).transport.get = mockGet;
 
       await (sdk as any).segments.get('enterprise_buyers', { sizes: true });
@@ -176,6 +174,62 @@ describe('segmentsPlugin', () => {
       (sdk as any).transport.get = mockGet;
 
       await expect((sdk as any).segments.get('nonexistent')).rejects.toThrow('Not found');
+    });
+  });
+
+  describe('segments.sizes()', () => {
+    it('should fetch all sizes with no params', async () => {
+      const mockSizes = [
+        {
+          id: '1',
+          name: 'High Value',
+          slug_name: 'high_value',
+          size: 5000,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
+        {
+          id: '2',
+          name: 'Churned',
+          slug_name: 'churned',
+          size: 1200,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
+      ];
+      const mockGet = vi.fn().mockResolvedValue(mockSizes);
+      (sdk as any).transport.get = mockGet;
+
+      const result = await (sdk as any).segments.sizes();
+
+      expect(mockGet).toHaveBeenCalledWith('/api/segment/sizes', undefined);
+      expect(result).toEqual(mockSizes);
+      expect(result).toHaveLength(2);
+    });
+
+    it('should pass table param', async () => {
+      const mockGet = vi.fn().mockResolvedValue([]);
+      (sdk as any).transport.get = mockGet;
+
+      await (sdk as any).segments.sizes({ table: 'content' });
+
+      expect(mockGet).toHaveBeenCalledWith('/api/segment/sizes', { table: 'content' });
+    });
+
+    it('should pass ids as comma-separated string', async () => {
+      const mockGet = vi.fn().mockResolvedValue([]);
+      (sdk as any).transport.get = mockGet;
+
+      await (sdk as any).segments.sizes({ ids: ['abc', 'def'] });
+
+      expect(mockGet).toHaveBeenCalledWith('/api/segment/sizes', { ids: 'abc,def' });
+    });
+
+    it('should return empty array when API returns null', async () => {
+      const mockGet = vi.fn().mockResolvedValue(null);
+      (sdk as any).transport.get = mockGet;
+
+      const result = await (sdk as any).segments.sizes();
+
+      expect(result).toEqual([]);
     });
   });
 });

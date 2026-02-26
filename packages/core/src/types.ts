@@ -160,9 +160,26 @@ export interface SegmentGetOptions {
   sizes?: boolean;
 }
 
+export interface SegmentSizesOptions {
+  /** Entity table filter (default: "user") */
+  table?: string;
+  /** Filter to specific segment IDs */
+  ids?: string[];
+}
+
+export interface SegmentSize {
+  id: string;
+  name: string;
+  slug_name: string;
+  size: number;
+  timestamp: string;
+}
+
 export interface SegmentsPlugin {
   list(options?: SegmentListOptions): Promise<Segment[]>;
   get(slugOrId: string, options?: SegmentGetOptions): Promise<Segment>;
+  /** Fetch pre-computed segment sizes (v1 bulk endpoint). */
+  sizes(options?: SegmentSizesOptions): Promise<SegmentSize[]>;
 }
 
 export interface AiPlugin {
