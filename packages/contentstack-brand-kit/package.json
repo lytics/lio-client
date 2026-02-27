@@ -1,6 +1,6 @@
 {
   "name": "@lytics/lio-client-contentstack-brand-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Contentstack Brand Kit and Knowledge Vault plugin for Lytics lio-client",
   "private": false,
   "type": "module",
