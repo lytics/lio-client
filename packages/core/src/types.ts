@@ -100,6 +100,30 @@ export interface ContentEntity {
   [key: string]: unknown;
 }
 
+export interface ContentEnrichResult {
+  /** The input text or URL that was enriched */
+  input: string;
+  /** Topic scores keyed by display name */
+  topics: Record<string, number>;
+  /** Inferred topic scores from topic relationships */
+  inferred_topics: Record<string, number>;
+}
+
+export interface ContentAlignOptions {
+  /** Similarity method: "embed" (default), "jaccard", or "cosine" */
+  method?: 'embed' | 'jaccard' | 'cosine';
+  /** Max segments to return (default: 10) */
+  limit?: number;
+}
+
+export interface ContentAlignment {
+  segment_id: string;
+  segment_name: string;
+  segment_size: number;
+  alignment: number;
+  segment_topics: Record<string, number>;
+}
+
 export interface ContentPlugin {
   getByUrl(url: string): Promise<ContentEntity>;
   scan(options?: {
@@ -114,6 +138,8 @@ export interface ContentPlugin {
       fields?: string[];
     }
   ): AsyncGenerator<ContentEntity[], void, undefined>;
+  enrich(input: { text?: string; url?: string }): Promise<ContentEnrichResult>;
+  align(topics: Record<string, number>, options?: ContentAlignOptions): Promise<ContentAlignment[]>;
 }
 
 export interface SchemaField {

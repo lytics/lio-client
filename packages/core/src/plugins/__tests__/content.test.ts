@@ -205,4 +205,88 @@ describe('contentPlugin', () => {
       );
     });
   });
+
+  describe('content.enrich()', () => {
+    it('should require text or url', async () => {
+      await expect((sdk as any).content.enrich({})).rejects.toThrow(
+        'Either text or url is required'
+      );
+    });
+
+    it('should POST text as query param', async () => {
+      const enrichResult = {
+        input: 'Blog about coffee',
+        topics: { Coffee: 0.85, Wellness: 0.72 },
+        inferred_topics: { Beverages: 0.6 },
+      };
+      const mockPost = vi.fn().mockResolvedValue(enrichResult);
+      (sdk as any).transport.post = mockPost;
+
+      const result = await (sdk as any).content.enrich({ text: 'Blog about coffee' });
+
+      expect(mockPost).toHaveBeenCalledWith('/v2/content/enrich', undefined, {
+        text: 'Blog about coffee',
+      });
+      expect(result).toEqual(enrichResult);
+    });
+
+    it('should POST url as query param', async () => {
+      const enrichResult = {
+        input: 'https://example.com',
+        topics: { Tech: 0.9 },
+        inferred_topics: {},
+      };
+      const mockPost = vi.fn().mockResolvedValue(enrichResult);
+      (sdk as any).transport.post = mockPost;
+
+      const result = await (sdk as any).content.enrich({ url: 'https://example.com' });
+
+      expect(mockPost).toHaveBeenCalledWith('/v2/content/enrich', undefined, {
+        url: 'https://example.com',
+      });
+      expect(result).toEqual(enrichResult);
+    });
+  });
+
+  describe('content.align()', () => {
+    it('should require topics', async () => {
+      await expect((sdk as any).content.align({})).rejects.toThrow('Topics are required');
+    });
+
+    it('should POST topics as JSON body', async () => {
+      const alignResult = [
+        {
+          segment_id: 'seg-1',
+          segment_name: 'Coffee Lovers',
+          segment_size: 5000,
+          alignment: 0.85,
+          segment_topics: { Coffee: 0.9 },
+        },
+      ];
+      const mockPost = vi.fn().mockResolvedValue(alignResult);
+      (sdk as any).transport.post = mockPost;
+
+      const result = await (sdk as any).content.align({ Coffee: 0.85, Wellness: 0.72 });
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/v2/content/align',
+        { topics: { Coffee: 0.85, Wellness: 0.72 } },
+        {}
+      );
+      expect(result).toEqual(alignResult);
+    });
+
+    it('should pass method and limit options', async () => {
+      const mockPost = vi.fn().mockResolvedValue([]);
+      (sdk as any).transport.post = mockPost;
+
+      await (sdk as any).content.align({ Coffee: 0.85 }, { method: 'cosine', limit: 5 });
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/v2/content/align',
+        { topics: { Coffee: 0.85 } },
+        { method: 'cosine', limit: 5 }
+      );
+    });
+  });
 });
