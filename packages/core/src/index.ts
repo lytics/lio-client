@@ -13,6 +13,8 @@ export type {
   ContentScanOptions,
 } from './plugins/content';
 export { contentPlugin } from './plugins/content';
+export { jobsPlugin } from './plugins/jobs';
+export { providersPlugin } from './plugins/providers';
 export type { SchemaResponse } from './plugins/schema';
 export { schemaPlugin } from './plugins/schema';
 export { segmentsPlugin } from './plugins/segments';
@@ -37,8 +39,15 @@ export type {
   AiPlugin,
   ContentEntity,
   ContentPlugin,
+  Job,
+  JobListOptions,
+  JobsPlugin,
   LioClient,
   LioClientConfig,
+  Provider,
+  ProviderAuth,
+  ProviderAuthConfig,
+  ProvidersPlugin,
   Schema,
   SchemaField,
   SchemaPlugin,

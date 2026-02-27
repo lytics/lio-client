@@ -69,4 +69,20 @@ describe('createLioClient', () => {
     expect(typeof lio.off).toBe('function');
     expect(typeof lio.emit).toBe('function');
   });
+
+  it('should expose jobs and providers on client', () => {
+    const lio = createLioClient({ apiKey: 'test-key' });
+
+    expect(lio.jobs).toBeDefined();
+    expect(typeof lio.jobs.list).toBe('function');
+    expect(lio.providers).toBeDefined();
+    expect(typeof lio.providers.list).toBe('function');
+  });
+
+  it('should pass accountId through SDK config', () => {
+    const lio = createLioClient({ apiKey: 'test-key', accountId: 'acct-123' });
+
+    const accountId = (lio as any).get('accountId');
+    expect(accountId).toBe('acct-123');
+  });
 });
