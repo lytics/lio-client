@@ -1,5 +1,12 @@
 # @lytics/lio-client-contentstack-cda
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [cbe4d86]
+  - @lytics/lio-client@0.2.4
+
 ## 0.1.3
 
 ### Patch Changes

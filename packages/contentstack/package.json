@@ -1,6 +1,6 @@
 {
   "name": "@lytics/lio-client-contentstack",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Contentstack integration for Lytics lio-client - enrich CMS content with Lytics analytics",
   "private": false,
   "type": "module",

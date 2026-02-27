@@ -1,5 +1,11 @@
 # @lytics/lio-client
 
+## 0.2.4
+
+### Patch Changes
+
+- cbe4d86: Fix content.enrich() to send text as form-encoded body instead of query params, avoiding URL length limits with large text payloads.
+
 ## 0.2.3
 
 ### Patch Changes
