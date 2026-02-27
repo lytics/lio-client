@@ -8,7 +8,13 @@
  */
 
 import type { PluginFunction, SDK } from '@lytics/sdk-kit';
-import type { ContentEntity, ContentPlugin } from '../types';
+import type {
+  ContentAlignment,
+  ContentAlignOptions,
+  ContentEnrichResult,
+  ContentEntity,
+  ContentPlugin,
+} from '../types';
 import type { LyticsTransportPlugin } from './transport';
 
 export interface ContentEntityResponse {
@@ -290,6 +296,95 @@ export const contentPlugin: PluginFunction = (plugin, instance) => {
         }
 
         plugin.emit('content:scan-segment-complete', { segmentId, total: totalFetched });
+      },
+      /**
+       * Enrich text or URL with Lytics content topics
+       *
+       * @param input - Text or URL to enrich (provide one)
+       * @returns Enrichment result with topic scores
+       *
+       * @example
+       * ```typescript
+       * const result = await lio.content.enrich({ text: 'Blog post about coffee...' });
+       * console.log(result.topics); // { "Coffee": 0.85, "Wellness": 0.72 }
+       * ```
+       */
+      async enrich(input: { text?: string; url?: string }): Promise<ContentEnrichResult> {
+        if (!input.text && !input.url) {
+          throw new Error('Either text or url is required');
+        }
+
+        plugin.emit('content:enrich', { hasText: !!input.text, hasUrl: !!input.url });
+
+        const transport = (instance as SDK & { transport: LyticsTransportPlugin }).transport;
+        if (!transport) {
+          throw new Error('Transport plugin not registered. Use lyticsTransportPlugin.');
+        }
+
+        const params: Record<string, string> = {};
+        if (input.text) params.text = input.text;
+        if (input.url) params.url = input.url;
+
+        const response = await transport.post<ContentEnrichResult>(
+          '/v2/content/enrich',
+          undefined,
+          params
+        );
+
+        plugin.emit('content:enriched', {
+          topicCount: Object.keys(response.topics ?? {}).length,
+        });
+
+        return response;
+      },
+
+      /**
+       * Align topics against audience segments
+       *
+       * Given a set of topic scores (e.g. from enrich), returns the most
+       * relevant audience segments ranked by alignment score.
+       *
+       * @param topics - Topic scores to align (e.g. from enrich result)
+       * @param options - Alignment options (method, limit)
+       * @returns Segments ranked by alignment score
+       *
+       * @example
+       * ```typescript
+       * const enriched = await lio.content.enrich({ text: '...' });
+       * const segments = await lio.content.align(enriched.topics, { limit: 5 });
+       * for (const s of segments) {
+       *   console.log(`${s.segment_name}: ${s.alignment}`);
+       * }
+       * ```
+       */
+      async align(
+        topics: Record<string, number>,
+        options?: ContentAlignOptions
+      ): Promise<ContentAlignment[]> {
+        if (!topics || Object.keys(topics).length === 0) {
+          throw new Error('Topics are required');
+        }
+
+        plugin.emit('content:align', { topicCount: Object.keys(topics).length });
+
+        const transport = (instance as SDK & { transport: LyticsTransportPlugin }).transport;
+        if (!transport) {
+          throw new Error('Transport plugin not registered. Use lyticsTransportPlugin.');
+        }
+
+        const params: Record<string, string | number> = {};
+        if (options?.method) params.method = options.method;
+        if (options?.limit) params.limit = options.limit;
+
+        const response = await transport.post<ContentAlignment[]>(
+          '/v2/content/align',
+          { topics },
+          params
+        );
+
+        plugin.emit('content:aligned', { segmentCount: response.length });
+
+        return response;
       },
     } as ContentPlugin,
   });

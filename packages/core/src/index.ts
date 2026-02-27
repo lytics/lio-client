@@ -37,6 +37,9 @@ export { workflowsPlugin } from './plugins/workflows';
 // Types
 export type {
   AiPlugin,
+  ContentAlignment,
+  ContentAlignOptions,
+  ContentEnrichResult,
   ContentEntity,
   ContentPlugin,
   Job,
