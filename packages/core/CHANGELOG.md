@@ -1,5 +1,11 @@
 # @lytics/lio-client
 
+## 0.2.2
+
+### Patch Changes
+
+- fedc178: Add jobs and providers plugins with accountId config support
+
 ## 0.2.1
 
 ### Patch Changes
