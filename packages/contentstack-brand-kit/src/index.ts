@@ -10,5 +10,12 @@ export type {
   IngestPayload,
   IngestResponse,
   KnowledgeVaultMethods,
+  KVContent,
+  KVContentMetadata,
+  ListContentOptions,
+  ListContentResponse,
+  SearchParams,
+  SearchResponse,
+  SearchResult,
   VoiceProfile,
 } from './types';

@@ -75,8 +75,65 @@ export interface BrandKitMethods {
   getVoiceProfile(brandKitUid: string, profileUid: string): Promise<VoiceProfile>;
 }
 
+export interface SearchParams {
+  content: string;
+  limit?: number;
+  threshold?: number;
+  folder_uids?: string[];
+}
+
+export interface SearchResult {
+  id: string;
+  content: string;
+  score: number;
+}
+
+export interface SearchResponse {
+  documents: SearchResult[];
+  metrics: Record<string, unknown>;
+}
+
+export interface KVContentMetadata {
+  title: string;
+  data_source: string;
+  tokens: number;
+}
+
+export interface KVContent {
+  content_uid: string;
+  content: string;
+  deleted_at: boolean;
+  organization_uid: string;
+  brand_kit_uid: string;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  _metadata: KVContentMetadata;
+  type: string;
+  path: string;
+}
+
+export interface ListContentResponse {
+  documents: KVContent[];
+}
+
+export interface ListContentOptions {
+  skip?: number;
+  limit?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  typeahead?: string;
+}
+
 export interface KnowledgeVaultMethods {
   ingest(payload: IngestPayload): Promise<IngestResponse>;
+  search(params: SearchParams): Promise<SearchResponse>;
+  hybridSearch(params: SearchParams): Promise<SearchResponse>;
+  listContent(options?: ListContentOptions): Promise<ListContentResponse>;
+  getContent(contentUid: string): Promise<KVContent>;
+  updateContent(contentUid: string, payload: IngestPayload): Promise<unknown>;
+  deleteContent(contentUid: string): Promise<unknown>;
 }
 
 export interface BrandKitPlugin {

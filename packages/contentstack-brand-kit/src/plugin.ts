@@ -5,6 +5,11 @@ import type {
   BrandKitPluginConfig,
   IngestPayload,
   IngestResponse,
+  KVContent,
+  ListContentOptions,
+  ListContentResponse,
+  SearchParams,
+  SearchResponse,
   VoiceProfile,
 } from './types';
 
@@ -57,25 +62,39 @@ export function brandKitPlugin(config: BrandKitPluginConfig): PluginFunction {
       return (await response.json()) as T;
     }
 
-    async function kvFetch<T>(path: string, body: unknown): Promise<T> {
+    async function kvFetch<T>(
+      path: string,
+      options?: { method?: string; body?: unknown; params?: Record<string, string> }
+    ): Promise<T> {
       if (!config.brandKitUid) {
         throw new Error('brandKitUid is required for Knowledge Vault operations');
       }
 
+      const method = options?.method ?? (options?.body ? 'POST' : 'GET');
       const url = new URL(`/brand-kits/v1${path}`, kvBaseUrl);
+
+      if (options?.params) {
+        for (const [key, value] of Object.entries(options.params)) {
+          url.searchParams.set(key, value);
+        }
+      }
+
+      const headers: Record<string, string> = {
+        authtoken: config.authtoken,
+        organization_uid: config.organizationUid,
+        brand_kit_uid: config.brandKitUid,
+      };
+
+      const init: RequestInit = { method, headers };
+
+      if (options?.body) {
+        headers['Content-Type'] = 'application/json';
+        init.body = JSON.stringify(options.body);
+      }
 
       let response: Response;
       try {
-        response = await fetch(url.toString(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            authtoken: config.authtoken,
-            organization_uid: config.organizationUid,
-            brand_kit_uid: config.brandKitUid,
-          },
-          body: JSON.stringify(body),
-        });
+        response = await fetch(url.toString(), init);
       } catch (error) {
         throw new Error(
           `Knowledge Vault API request failed: ${error instanceof Error ? error.message : String(error)} (URL: ${url.pathname})`
@@ -117,20 +136,20 @@ export function brandKitPlugin(config: BrandKitPluginConfig): PluginFunction {
         },
 
         async listGuidelines(brandKitUid: string): Promise<AgentGuideline[]> {
-          const data = await brandKitFetch<{ guidelines: AgentGuideline[] }>(
-            `/brand-kits/${brandKitUid}/guidelines`
+          const data = await brandKitFetch<{ agent_guidelines: AgentGuideline[] }>(
+            `/brand-kits/${brandKitUid}/agent-guidelines`
           );
-          return data.guidelines;
+          return data.agent_guidelines;
         },
 
         async getResolvedGuidelines(
           brandKitUid: string,
           guidelineUid: string
         ): Promise<AgentGuideline> {
-          const data = await brandKitFetch<{ guideline: AgentGuideline }>(
-            `/brand-kits/${brandKitUid}/guidelines/${guidelineUid}/resolve`
+          const data = await brandKitFetch<{ data: AgentGuideline }>(
+            `/brand-kits/${brandKitUid}/agent-guidelines/${guidelineUid}/resolved`
           );
-          return data.guideline;
+          return data.data;
         },
 
         async listVoiceProfiles(brandKitUid: string): Promise<VoiceProfile[]> {
@@ -150,7 +169,40 @@ export function brandKitPlugin(config: BrandKitPluginConfig): PluginFunction {
 
       knowledgeVault: {
         async ingest(payload: IngestPayload): Promise<IngestResponse> {
-          return await kvFetch<IngestResponse>('/ingest', payload);
+          return await kvFetch<IngestResponse>('/knowledge-vault/', { body: payload });
+        },
+
+        async search(params: SearchParams): Promise<SearchResponse> {
+          return await kvFetch<SearchResponse>('/knowledge-vault/search', { body: params });
+        },
+
+        async hybridSearch(params: SearchParams): Promise<SearchResponse> {
+          return await kvFetch<SearchResponse>('/knowledge-vault/hybrid-search', { body: params });
+        },
+
+        async listContent(options?: ListContentOptions): Promise<ListContentResponse> {
+          const params: Record<string, string> = {};
+          if (options?.skip != null) params.skip = String(options.skip);
+          if (options?.limit != null) params.limit = String(options.limit);
+          if (options?.sort) params.sort = options.sort;
+          if (options?.order) params.order = options.order;
+          if (options?.typeahead) params.typeahead = options.typeahead;
+          return await kvFetch<ListContentResponse>('/knowledge-vault/get-context', { params });
+        },
+
+        async getContent(contentUid: string): Promise<KVContent> {
+          return await kvFetch<KVContent>(`/knowledge-vault/get-context/${contentUid}`);
+        },
+
+        async updateContent(contentUid: string, payload: IngestPayload): Promise<unknown> {
+          return await kvFetch(`/knowledge-vault/${contentUid}`, {
+            method: 'PUT',
+            body: payload,
+          });
+        },
+
+        async deleteContent(contentUid: string): Promise<unknown> {
+          return await kvFetch(`/knowledge-vault/${contentUid}`, { method: 'DELETE' });
         },
       },
     });

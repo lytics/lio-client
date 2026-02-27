@@ -107,12 +107,12 @@ describe('brandKitPlugin', () => {
   describe('brandKit.listGuidelines()', () => {
     it('sends correct path', async () => {
       const { brandKit } = createPluginHarness();
-      fetchSpy.mockResolvedValueOnce(mockResponse({ guidelines: [] }));
+      fetchSpy.mockResolvedValueOnce(mockResponse({ agent_guidelines: [] }));
 
       await brandKit.listGuidelines('bk1');
 
       const [url] = fetchSpy.mock.calls[0];
-      expect(String(url)).toContain('/v1/brand-kits/bk1/guidelines');
+      expect(String(url)).toContain('/v1/brand-kits/bk1/agent-guidelines');
     });
   });
 
@@ -127,7 +127,7 @@ describe('brandKitPlugin', () => {
           knowledge_vault_context: 'Product docs context',
         },
       };
-      fetchSpy.mockResolvedValueOnce(mockResponse({ guideline }));
+      fetchSpy.mockResolvedValueOnce(mockResponse({ data: guideline }));
 
       const result = await brandKit.getResolvedGuidelines('bk1', 'gl1');
 
@@ -135,7 +135,7 @@ describe('brandKitPlugin', () => {
       expect(result.guidelines.voice_profile_context).toBe('Friendly and professional');
       expect(result.guidelines.knowledge_vault_context).toBe('Product docs context');
       const [url] = fetchSpy.mock.calls[0];
-      expect(String(url)).toContain('/v1/brand-kits/bk1/guidelines/gl1/resolve');
+      expect(String(url)).toContain('/v1/brand-kits/bk1/agent-guidelines/gl1/resolved');
     });
   });
 
@@ -236,7 +236,7 @@ describe('brandKitPlugin', () => {
 
       expect(fetchSpy).toHaveBeenCalledOnce();
       const [url, init] = fetchSpy.mock.calls[0];
-      expect(String(url)).toContain('/brand-kits/v1/ingest');
+      expect(String(url)).toContain('/brand-kits/v1/knowledge-vault/');
       expect(init?.method).toBe('POST');
       expect(JSON.parse(init?.body as string)).toEqual({
         content: 'Some document content',
@@ -286,6 +286,132 @@ describe('brandKitPlugin', () => {
       } catch (error) {
         expect((error as Error).message).not.toContain('test-authtoken');
       }
+    });
+  });
+
+  describe('knowledgeVault.search()', () => {
+    it('sends correct POST body and URL', async () => {
+      const { knowledgeVault } = createPluginHarness({ brandKitUid: 'bk1' });
+      fetchSpy.mockResolvedValueOnce(
+        mockResponse({
+          documents: [{ id: 'doc1', content: 'match', score: 0.95 }],
+          metrics: {},
+        })
+      );
+
+      const result = await knowledgeVault.search({
+        content: 'matcha tea',
+        limit: 5,
+        threshold: 0.5,
+      });
+
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(String(url)).toContain('/brand-kits/v1/knowledge-vault/search');
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(init?.body as string)).toEqual({
+        content: 'matcha tea',
+        limit: 5,
+        threshold: 0.5,
+      });
+      expect(result.documents).toHaveLength(1);
+      expect(result.documents[0].score).toBe(0.95);
+    });
+  });
+
+  describe('knowledgeVault.hybridSearch()', () => {
+    it('sends correct POST body and URL', async () => {
+      const { knowledgeVault } = createPluginHarness({ brandKitUid: 'bk1' });
+      fetchSpy.mockResolvedValueOnce(mockResponse({ documents: [], metrics: {} }));
+
+      await knowledgeVault.hybridSearch({ content: 'organic tea' });
+
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(String(url)).toContain('/brand-kits/v1/knowledge-vault/hybrid-search');
+      expect(init?.method).toBe('POST');
+    });
+  });
+
+  describe('knowledgeVault.listContent()', () => {
+    it('sends GET with query params', async () => {
+      const { knowledgeVault } = createPluginHarness({ brandKitUid: 'bk1' });
+      fetchSpy.mockResolvedValueOnce(mockResponse({ documents: [] }));
+
+      await knowledgeVault.listContent({ skip: 10, limit: 20, order: 'desc' });
+
+      const [url, init] = fetchSpy.mock.calls[0];
+      const parsed = new URL(String(url));
+      expect(parsed.pathname).toContain('/brand-kits/v1/knowledge-vault/get-context');
+      expect(parsed.searchParams.get('skip')).toBe('10');
+      expect(parsed.searchParams.get('limit')).toBe('20');
+      expect(parsed.searchParams.get('order')).toBe('desc');
+      expect(init?.method).toBe('GET');
+    });
+
+    it('sends GET without params when no options provided', async () => {
+      const { knowledgeVault } = createPluginHarness({ brandKitUid: 'bk1' });
+      fetchSpy.mockResolvedValueOnce(mockResponse({ documents: [] }));
+
+      await knowledgeVault.listContent();
+
+      const [url] = fetchSpy.mock.calls[0];
+      expect(String(url)).toContain('/brand-kits/v1/knowledge-vault/get-context');
+    });
+  });
+
+  describe('knowledgeVault.getContent()', () => {
+    it('sends GET with content UID in path', async () => {
+      const { knowledgeVault } = createPluginHarness({ brandKitUid: 'bk1' });
+      const doc = {
+        content_uid: 'doc1',
+        content: 'test content',
+        deleted_at: false,
+        organization_uid: 'org1',
+        brand_kit_uid: 'bk1',
+        created_at: '2025-01-01',
+        created_by: 'user1',
+        updated_at: '2025-01-02',
+        updated_by: 'user1',
+        _metadata: { title: 'Test', data_source: 'text', tokens: 10 },
+        type: 'entry',
+        path: '/dir0',
+      };
+      fetchSpy.mockResolvedValueOnce(mockResponse(doc));
+
+      const result = await knowledgeVault.getContent('doc1');
+
+      const [url] = fetchSpy.mock.calls[0];
+      expect(String(url)).toContain('/brand-kits/v1/knowledge-vault/get-context/doc1');
+      expect(result.content_uid).toBe('doc1');
+    });
+  });
+
+  describe('knowledgeVault.updateContent()', () => {
+    it('sends PUT with content UID in path and body', async () => {
+      const { knowledgeVault } = createPluginHarness({ brandKitUid: 'bk1' });
+      fetchSpy.mockResolvedValueOnce(mockResponse({ message: 'Updated' }));
+
+      await knowledgeVault.updateContent('doc1', { content: 'updated text', title: 'New Title' });
+
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(String(url)).toContain('/brand-kits/v1/knowledge-vault/doc1');
+      expect(init?.method).toBe('PUT');
+      expect(JSON.parse(init?.body as string)).toEqual({
+        content: 'updated text',
+        title: 'New Title',
+      });
+    });
+  });
+
+  describe('knowledgeVault.deleteContent()', () => {
+    it('sends DELETE with content UID in path', async () => {
+      const { knowledgeVault } = createPluginHarness({ brandKitUid: 'bk1' });
+      fetchSpy.mockResolvedValueOnce(mockResponse({ message: 'Deleted' }));
+
+      await knowledgeVault.deleteContent('doc1');
+
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(String(url)).toContain('/brand-kits/v1/knowledge-vault/doc1');
+      expect(init?.method).toBe('DELETE');
     });
   });
 
