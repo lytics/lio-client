@@ -321,14 +321,15 @@ export const contentPlugin: PluginFunction = (plugin, instance) => {
           throw new Error('Transport plugin not registered. Use lyticsTransportPlugin.');
         }
 
-        const params: Record<string, string> = {};
-        if (input.text) params.text = input.text;
-        if (input.url) params.url = input.url;
+        const formData = new URLSearchParams();
+        if (input.text) formData.set('text', input.text);
+        if (input.url) formData.set('url', input.url);
 
         const response = await transport.post<ContentEnrichResult>(
           '/v2/content/enrich',
+          formData.toString(),
           undefined,
-          params
+          { contentType: 'application/x-www-form-urlencoded' }
         );
 
         plugin.emit('content:enriched', {

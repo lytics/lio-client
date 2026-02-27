@@ -41,13 +41,15 @@ export interface ApiError {
   request_id?: string;
 }
 
+type PostContentType = 'application/json' | 'text/plain' | 'application/x-www-form-urlencoded';
+
 export interface LyticsTransportPlugin {
   get<T = any>(path: string, params?: Record<string, any>): Promise<T>;
   post<T = any>(
     path: string,
     body?: any,
     params?: Record<string, any>,
-    options?: { contentType?: 'application/json' | 'text/plain'; unwrap?: boolean }
+    options?: { contentType?: PostContentType; unwrap?: boolean }
   ): Promise<T>;
 }
 
@@ -175,7 +177,7 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
         path: string,
         body?: any,
         params?: Record<string, any>,
-        options?: { contentType?: 'application/json' | 'text/plain'; unwrap?: boolean }
+        options?: { contentType?: PostContentType; unwrap?: boolean }
       ): Promise<T> {
         const contentType = options?.contentType || 'application/json';
         const shouldUnwrap = options?.unwrap !== false; // Default to true
@@ -184,13 +186,17 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
 
         plugin.emit('lytics:request', { method: 'POST', path, params, body });
 
+        // For form-urlencoded, pass the string body directly via text/plain
+        // serialization path and override Content-Type in headers.
+        const isForm = contentType === 'application/x-www-form-urlencoded';
         const request: TransportRequest = {
           url,
           method: 'POST',
           data: body,
-          contentType,
+          contentType: isForm ? 'text/plain' : contentType,
           headers: {
             Accept: 'application/json',
+            ...(isForm ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
           },
         };
 
