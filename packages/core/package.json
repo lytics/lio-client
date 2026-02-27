@@ -1,6 +1,6 @@
 {
   "name": "@lytics/lio-client",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "TypeScript/JavaScript SDK for the Lytics API - plugin-based client for all Lytics integrations",
   "private": false,
   "type": "module",
