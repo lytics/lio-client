@@ -17,7 +17,9 @@
       "@lytics/lio-client-contentstack": ["packages/contentstack/src"],
       "@lytics/lio-client-contentstack/*": ["packages/contentstack/src/*"],
       "@lytics/lio-client-contentstack-cda": ["packages/contentstack-cda/src"],
-      "@lytics/lio-client-contentstack-cda/*": ["packages/contentstack-cda/src/*"]
+      "@lytics/lio-client-contentstack-cda/*": ["packages/contentstack-cda/src/*"],
+      "@lytics/lio-client-contentstack-brand-kit": ["packages/contentstack-brand-kit/src"],
+      "@lytics/lio-client-contentstack-brand-kit/*": ["packages/contentstack-brand-kit/src/*"]
     }
   },
   "exclude": ["node_modules"]
