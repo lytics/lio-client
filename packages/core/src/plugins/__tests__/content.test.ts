@@ -213,7 +213,7 @@ describe('contentPlugin', () => {
       );
     });
 
-    it('should POST text as query param', async () => {
+    it('should POST text as form-encoded body', async () => {
       const enrichResult = {
         input: 'Blog about coffee',
         topics: { Coffee: 0.85, Wellness: 0.72 },
@@ -224,13 +224,16 @@ describe('contentPlugin', () => {
 
       const result = await (sdk as any).content.enrich({ text: 'Blog about coffee' });
 
-      expect(mockPost).toHaveBeenCalledWith('/v2/content/enrich', undefined, {
-        text: 'Blog about coffee',
-      });
+      expect(mockPost).toHaveBeenCalledWith(
+        '/v2/content/enrich',
+        'text=Blog+about+coffee',
+        undefined,
+        { contentType: 'application/x-www-form-urlencoded' }
+      );
       expect(result).toEqual(enrichResult);
     });
 
-    it('should POST url as query param', async () => {
+    it('should POST url as form-encoded body', async () => {
       const enrichResult = {
         input: 'https://example.com',
         topics: { Tech: 0.9 },
@@ -241,9 +244,12 @@ describe('contentPlugin', () => {
 
       const result = await (sdk as any).content.enrich({ url: 'https://example.com' });
 
-      expect(mockPost).toHaveBeenCalledWith('/v2/content/enrich', undefined, {
-        url: 'https://example.com',
-      });
+      expect(mockPost).toHaveBeenCalledWith(
+        '/v2/content/enrich',
+        'url=https%3A%2F%2Fexample.com',
+        undefined,
+        { contentType: 'application/x-www-form-urlencoded' }
+      );
       expect(result).toEqual(enrichResult);
     });
   });
