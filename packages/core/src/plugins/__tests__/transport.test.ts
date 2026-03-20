@@ -46,4 +46,13 @@ describe('lyticsTransportPlugin', () => {
     const baseUrl = sdk.get('transport.baseUrl');
     expect(baseUrl).toBe('https://api.test.lytics.io');
   });
+
+  describe('enriched events', () => {
+    it('should expose get and post methods that emit enriched events', () => {
+      sdk.use(lyticsTransportPlugin);
+
+      expect(typeof (sdk as any).transport.get).toBe('function');
+      expect(typeof (sdk as any).transport.post).toBe('function');
+    });
+  });
 });

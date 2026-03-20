@@ -151,8 +151,9 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
        */
       async get<T = any>(path: string, params?: Record<string, any>): Promise<T> {
         const url = buildUrl(path, params);
+        const startTime = Date.now();
 
-        plugin.emit('lytics:request', { method: 'GET', path, params });
+        plugin.emit('lytics:request', { method: 'GET', path, url, params });
 
         const request: TransportRequest = {
           url,
@@ -163,9 +164,17 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
         };
 
         const response = await sdkTransport.send(request);
+        const requestId = (response.data as ApiResponse)?.request_id;
         const data = unwrapResponse<T>(response);
 
-        plugin.emit('lytics:response', { method: 'GET', path, status: response.status });
+        plugin.emit('lytics:response', {
+          method: 'GET',
+          path,
+          url,
+          status: response.status,
+          duration: Date.now() - startTime,
+          requestId,
+        });
 
         return data;
       },
@@ -183,8 +192,9 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
         const shouldUnwrap = options?.unwrap !== false; // Default to true
 
         const url = buildUrl(path, params);
+        const startTime = Date.now();
 
-        plugin.emit('lytics:request', { method: 'POST', path, params, body });
+        plugin.emit('lytics:request', { method: 'POST', path, url, params, body });
 
         // For form-urlencoded, pass the string body directly via text/plain
         // serialization path and override Content-Type in headers.
@@ -201,11 +211,19 @@ export const lyticsTransportPlugin: PluginFunction = (plugin, instance, config) 
         };
 
         const response = await sdkTransport.send(request);
+        const requestId = (response.data as ApiResponse)?.request_id;
 
         // Unwrap response if requested (default behavior for JSON endpoints)
         const data = shouldUnwrap ? unwrapResponse<T>(response) : (response.data as T);
 
-        plugin.emit('lytics:response', { method: 'POST', path, status: response.status });
+        plugin.emit('lytics:response', {
+          method: 'POST',
+          path,
+          url,
+          status: response.status,
+          duration: Date.now() - startTime,
+          requestId,
+        });
 
         return data;
       },

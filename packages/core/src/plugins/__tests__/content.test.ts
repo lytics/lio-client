@@ -295,4 +295,42 @@ describe('contentPlugin', () => {
       );
     });
   });
+
+  describe('content.opportunity()', () => {
+    it('should fetch opportunity topics with no params', async () => {
+      const mockTopics = [
+        {
+          topic: 'AI',
+          dimensions: [{ label: 'reach', value: 0.9, subject: 'audience' }],
+          segments: ['tech_enthusiasts'],
+          context_layer: 'global',
+        },
+      ];
+      const mockGet = vi.fn().mockResolvedValue({ topics: mockTopics });
+      (sdk as any).transport.get = mockGet;
+
+      const result = await (sdk as any).content.opportunity();
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/content/opportunity', undefined);
+      expect(result).toEqual(mockTopics);
+    });
+
+    it('should pass date param', async () => {
+      const mockGet = vi.fn().mockResolvedValue({ topics: [] });
+      (sdk as any).transport.get = mockGet;
+
+      await (sdk as any).content.opportunity({ date: '2024-06-01' });
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/content/opportunity', { date: '2024-06-01' });
+    });
+
+    it('should return empty array when topics is null', async () => {
+      const mockGet = vi.fn().mockResolvedValue({});
+      (sdk as any).transport.get = mockGet;
+
+      const result = await (sdk as any).content.opportunity();
+
+      expect(result).toEqual([]);
+    });
+  });
 });

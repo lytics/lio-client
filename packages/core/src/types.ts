@@ -124,6 +124,24 @@ export interface ContentAlignment {
   segment_topics: Record<string, number>;
 }
 
+export interface OpportunityDimension {
+  label: string;
+  value: number;
+  subject: string;
+}
+
+export interface OpportunityTopic {
+  topic: string;
+  dimensions: OpportunityDimension[];
+  segments: string[];
+  context_layer: string;
+}
+
+export interface ContentOpportunityOptions {
+  /** ISO 8601 date, defaults to latest */
+  date?: string;
+}
+
 export interface ContentPlugin {
   getByUrl(url: string): Promise<ContentEntity>;
   scan(options?: {
@@ -140,6 +158,8 @@ export interface ContentPlugin {
   ): AsyncGenerator<ContentEntity[], void, undefined>;
   enrich(input: { text?: string; url?: string }): Promise<ContentEnrichResult>;
   align(topics: Record<string, number>, options?: ContentAlignOptions): Promise<ContentAlignment[]>;
+  /** Fetch content opportunity topics */
+  opportunity(options?: ContentOpportunityOptions): Promise<OpportunityTopic[]>;
 }
 
 export interface SchemaField {
@@ -204,6 +224,8 @@ export interface SegmentListOptions {
   kind?: string;
   /** Exclude predefined segments (default: false) */
   filterPredefined?: boolean;
+  /** Include cached segment sizes (requires server commit d168baa) */
+  sizes?: boolean;
 }
 
 export interface SegmentGetOptions {
@@ -226,11 +248,36 @@ export interface SegmentSize {
   timestamp: string;
 }
 
+export interface SegmentGroup {
+  id: string;
+  aid: number;
+  account_id: string;
+  created: string;
+  updated: string;
+  author: string;
+  name: string;
+  description: string;
+  segment_ids: string[];
+}
+
+export interface SegmentScanOptions {
+  limit?: number;
+  fields?: string[];
+  /** Entity table: "user" (default), "content", "campaign", etc. */
+  table?: string;
+  sortfield?: string;
+  sortorder?: 'asc' | 'desc';
+}
+
 export interface SegmentsPlugin {
   list(options?: SegmentListOptions): Promise<Segment[]>;
   get(slugOrId: string, options?: SegmentGetOptions): Promise<Segment>;
   /** Fetch pre-computed segment sizes (v1 bulk endpoint). */
   sizes(options?: SegmentSizesOptions): Promise<SegmentSize[]>;
+  /** Fetch segment groups */
+  groups(): Promise<SegmentGroup[]>;
+  /** Scan a segment's entities (generic, supports any table) */
+  scan(segmentId: string, options?: SegmentScanOptions): Promise<Record<string, unknown>[]>;
 }
 
 export interface AiPlugin {
