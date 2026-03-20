@@ -13,7 +13,9 @@ import type {
   ContentAlignOptions,
   ContentEnrichResult,
   ContentEntity,
+  ContentOpportunityOptions,
   ContentPlugin,
+  OpportunityTopic,
 } from '../types';
 import type { LyticsTransportPlugin } from './transport';
 
@@ -386,6 +388,34 @@ export const contentPlugin: PluginFunction = (plugin, instance) => {
         plugin.emit('content:aligned', { segmentCount: response.length });
 
         return response;
+      },
+      /**
+       * Fetch content opportunity topics
+       *
+       * @param options - Options (date filter)
+       * @returns Array of opportunity topics with dimensions and segments
+       */
+      async opportunity(options?: ContentOpportunityOptions): Promise<OpportunityTopic[]> {
+        plugin.emit('content:opportunity', { options });
+
+        const transport = (instance as SDK & { transport: LyticsTransportPlugin }).transport;
+        if (!transport) {
+          throw new Error('Transport plugin not registered. Use lyticsTransportPlugin.');
+        }
+
+        const params: Record<string, string> = {};
+        if (options?.date) params.date = options.date;
+
+        const response = await transport.get<{ topics: OpportunityTopic[] }>(
+          '/v2/content/opportunity',
+          Object.keys(params).length > 0 ? params : undefined
+        );
+
+        const topics = response.topics ?? [];
+
+        plugin.emit('content:opportunity-received', { count: topics.length });
+
+        return topics;
       },
     } as ContentPlugin,
   });

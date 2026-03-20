@@ -232,4 +232,136 @@ describe('segmentsPlugin', () => {
       expect(result).toEqual([]);
     });
   });
+
+  describe('segments.list() with sizes', () => {
+    it('should pass sizes param when true', async () => {
+      const mockGet = vi.fn().mockResolvedValue([]);
+      (sdk as any).transport.get = mockGet;
+
+      await (sdk as any).segments.list({ sizes: true });
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/segment', { sizes: true });
+    });
+
+    it('should not pass sizes param when false or omitted', async () => {
+      const mockGet = vi.fn().mockResolvedValue([]);
+      (sdk as any).transport.get = mockGet;
+
+      await (sdk as any).segments.list({ sizes: false });
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/segment', undefined);
+    });
+
+    it('should combine sizes with other params', async () => {
+      const mockGet = vi.fn().mockResolvedValue([]);
+      (sdk as any).transport.get = mockGet;
+
+      await (sdk as any).segments.list({ table: 'user', kind: 'segment', sizes: true });
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/segment', {
+        table: 'user',
+        kind: 'segment',
+        sizes: true,
+      });
+    });
+  });
+
+  describe('segments.groups()', () => {
+    it('should fetch segment groups', async () => {
+      const mockGroups = [
+        {
+          id: 'g1',
+          aid: 123,
+          account_id: 'acc-1',
+          created: '2024-01-01',
+          updated: '2024-01-01',
+          author: 'test@example.com',
+          name: 'VIP Segments',
+          description: 'High-value audience groups',
+          segment_ids: ['seg-1', 'seg-2'],
+        },
+      ];
+      const mockGet = vi.fn().mockResolvedValue(mockGroups);
+      (sdk as any).transport.get = mockGet;
+
+      const result = await (sdk as any).segments.groups();
+
+      expect(mockGet).toHaveBeenCalledWith('/v2/segment/group');
+      expect(result).toEqual(mockGroups);
+    });
+
+    it('should return empty array when API returns null', async () => {
+      const mockGet = vi.fn().mockResolvedValue(null);
+      (sdk as any).transport.get = mockGet;
+
+      const result = await (sdk as any).segments.groups();
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('segments.scan()', () => {
+    it('should require segment ID', async () => {
+      await expect((sdk as any).segments.scan('')).rejects.toThrow('Segment ID is required');
+    });
+
+    it('should scan segment with no options', async () => {
+      const mockData = [{ _uid: 'user-1', lytics_content_ai: 0.9 }];
+      const mockGet = vi.fn().mockResolvedValue({ data: mockData });
+      (sdk as any).transport.get = mockGet;
+
+      const result = await (sdk as any).segments.scan('seg-123');
+
+      expect(mockGet).toHaveBeenCalledWith('/api/segment/seg-123/scan', undefined);
+      expect(result).toEqual(mockData);
+    });
+
+    it('should pass limit, table, and fields params', async () => {
+      const mockGet = vi.fn().mockResolvedValue({ data: [] });
+      (sdk as any).transport.get = mockGet;
+
+      await (sdk as any).segments.scan('seg-123', {
+        limit: 50,
+        table: 'user',
+        fields: ['_uid', 'lytics_content_ai'],
+      });
+
+      expect(mockGet).toHaveBeenCalledWith('/api/segment/seg-123/scan', {
+        limit: 50,
+        table: 'user',
+        fields: '_uid,lytics_content_ai',
+      });
+    });
+
+    it('should pass sort params', async () => {
+      const mockGet = vi.fn().mockResolvedValue({ data: [] });
+      (sdk as any).transport.get = mockGet;
+
+      await (sdk as any).segments.scan('seg-123', {
+        sortfield: 'created',
+        sortorder: 'desc',
+      });
+
+      expect(mockGet).toHaveBeenCalledWith('/api/segment/seg-123/scan', {
+        sortfield: 'created',
+        sortorder: 'desc',
+      });
+    });
+
+    it('should return empty array when data is null', async () => {
+      const mockGet = vi.fn().mockResolvedValue({});
+      (sdk as any).transport.get = mockGet;
+
+      const result = await (sdk as any).segments.scan('seg-123');
+
+      expect(result).toEqual([]);
+    });
+
+    it('should propagate transport errors', async () => {
+      const mockGet = vi.fn().mockRejectedValue(new Error('Not found'));
+      (sdk as any).transport.get = mockGet;
+
+      await expect((sdk as any).segments.scan('bad-id')).rejects.toThrow('Not found');
+    });
+  });
 });
